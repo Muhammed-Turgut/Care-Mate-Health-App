@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.muhammedturgut.caremate.ui.diseases.DiseasesPageScreen
 import com.muhammedturgut.caremate.ui.home.MainPageScreen
 
 
@@ -31,9 +32,7 @@ class MainActivity : ComponentActivity() {
                         val maxHeight =maxHeight
                         val isTablet = maxWidth>600.dp
 
-                        MainPageScreen(maxWidth=maxWidth,
-                            maxHeight= maxHeight,
-                            isTablet=isTablet)
+                        DiseasesPageScreen()
 
                     }
                 }

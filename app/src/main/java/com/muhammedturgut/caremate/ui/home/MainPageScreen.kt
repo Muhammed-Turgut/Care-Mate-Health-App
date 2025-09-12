@@ -1,7 +1,6 @@
 package com.muhammedturgut.caremate.ui.home
 
-import android.R.attr.maxHeight
-import android.R.attr.maxWidth
+
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -20,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -49,7 +47,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.Paragraph
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,10 +57,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.ConstraintLayout
-import com.muhammedturgut.caremate.ui.start.login.LogInScreen
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import kotlinx.coroutines.delay
