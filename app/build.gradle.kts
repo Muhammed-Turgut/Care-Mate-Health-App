@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.muhammedturgut.caremate"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.muhammedturgut.caremate"
@@ -56,4 +56,11 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    // ConstraintLayout kullanamk içine eklediğim kütüphane.
+    implementation ("androidx.constraintlayout:constraintlayout-compose:1.1.1")
+
+    //Navigasyon kütüphanesi
+    implementation("androidx.navigation:navigation-compose:2.7.7")
+
 }
