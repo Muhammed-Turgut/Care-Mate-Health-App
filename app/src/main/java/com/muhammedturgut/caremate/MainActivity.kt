@@ -11,9 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.muhammedturgut.caremate.ui.aiChat.AIChatPageScreen
-
-
+import com.muhammedturgut.caremate.ui.analysis.AnalyzePageScreen
 
 
 class MainActivity : ComponentActivity() {
@@ -32,7 +30,7 @@ class MainActivity : ComponentActivity() {
                         val maxHeight =maxHeight
                         val isTablet = maxWidth>600.dp
 
-                        AIChatPageScreen()
+                        AnalyzePageScreen(maxWidth,maxHeight,isTablet)
 
                     }
                 }
