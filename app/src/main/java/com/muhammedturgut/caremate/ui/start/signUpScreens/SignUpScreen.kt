@@ -1,6 +1,8 @@
 package com.muhammedturgut.caremate.ui.start.signUpScreens
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,17 +43,18 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
-import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 
 
 @Composable
 fun SignUpScreen(maxWidth: Dp,
-           maxHeight: Dp,
-           isTablet: Boolean){
+                maxHeight: Dp,
+                isTablet: Boolean,
+                 navControllerAppHost: NavController){
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -59,6 +63,15 @@ fun SignUpScreen(maxWidth: Dp,
         var textEmail by remember { mutableStateOf("") }
         var textPassword by remember { mutableStateOf("")}
         val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
+
+        val context = LocalContext.current
+        val activity = context as? Activity
+
+        BackHandler {
+
+          navControllerAppHost.navigate("LogInScreen")
+
+        }
 
         ConstraintLayout(modifier = Modifier.fillMaxSize()){
 
@@ -232,7 +245,7 @@ fun SignUpScreen(maxWidth: Dp,
 
             Button(
                 onClick = {
-
+                navControllerAppHost.navigate("SignUpScreenInfo")
                 },
                 modifier = Modifier
                     .constrainAs(btn) {
@@ -271,15 +284,17 @@ fun SignUpScreen(maxWidth: Dp,
                 bottom.linkTo(parent.bottom,margin = 24.dp)
             }) {
 
-                Text(text = "Hesabınız Varmı?",
+                Text(text = "Do you have an account?",
                     fontSize = 12.sp,
                     color = Color(0xFF6B6B6B),
                     fontFamily = PoppinBold,
                 )
-                Text(text = " Giriş Yapın",
+                Text(text = " Log in",
                     fontSize = 12.sp,
                     modifier = Modifier.clickable(onClick = {
-
+                       navControllerAppHost.navigate("LogInScreen"){
+                           popUpTo(navControllerAppHost.graph.id) { inclusive = true } //stacde biriken ekranları silemye yarıyor.
+                       }
                     }),
                     color = Color(0xFF4FA5E3),
                     fontFamily = PoppinBold,
@@ -295,20 +310,3 @@ fun SignUpScreen(maxWidth: Dp,
 
 }
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
-@Preview(showBackground = true)
-@Composable
-private fun Show(){
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-
-        val maxWidth = maxWidth
-        val maxHeight =maxHeight
-        val isTablet = maxWidth>600.dp
-
-        SignUpScreen(maxWidth = maxWidth,
-            maxHeight = maxHeight,
-            isTablet=isTablet)
-
-    }
-
-}

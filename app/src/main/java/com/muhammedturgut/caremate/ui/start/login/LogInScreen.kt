@@ -1,6 +1,8 @@
 package com.muhammedturgut.caremate.ui.start.login
 
 import android.annotation.SuppressLint
+import android.app.Activity
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -40,6 +43,7 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
@@ -48,11 +52,21 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 @Composable
 fun LogInScreen( maxWidth: Dp,
                  maxHeight: Dp,
-                 isTablet:Boolean){
+                 isTablet:Boolean,
+                 navControllerAppHost: NavController){
 
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color(0xFFFCFCFC))){
+
+        val context = LocalContext.current
+        val activity = context as? Activity
+
+        BackHandler {
+
+            activity?.finish()
+
+        }
 
         var textEmail by remember { mutableStateOf("") }
         var textPassword by remember { mutableStateOf("")}
@@ -202,7 +216,7 @@ fun LogInScreen( maxWidth: Dp,
 
             Button(
                 onClick = {
-                    //navControllerAppHost.navigate("NavBarHost")
+                    navControllerAppHost.navigate("NavBarHostScreen")
                 },
                 modifier = Modifier
                     .constrainAs(btn) {
@@ -233,7 +247,7 @@ fun LogInScreen( maxWidth: Dp,
                 bottom.linkTo(parent.bottom, margin = 24.dp)
             }) {
 
-                Text(text = "Hesabınız yok mu?",
+                Text(text = "Don't have an account? ",
                     fontSize = 12.sp,
                     color = Color(0xFF6B6B6B),
                     fontFamily = PoppinBold,
@@ -241,7 +255,11 @@ fun LogInScreen( maxWidth: Dp,
                 Text(text = " Sign Up",
                     fontSize = 12.sp,
                     modifier = Modifier.clickable(onClick = {
-                        //navControllerAppHost.navigate("SignUp")
+                        navControllerAppHost.navigate("SignUpScreen"){
+                            popUpTo(navControllerAppHost.graph.id){
+                                inclusive = true
+                            }
+                        }
                     }),
                     color = Color(0xFF4BA9E6),
                     fontFamily = PoppinBold,
@@ -254,22 +272,4 @@ fun LogInScreen( maxWidth: Dp,
 
 
     }
-}
-
-@SuppressLint("UnusedBoxWithConstraintsScope")
-@Preview(showBackground = true)
-@Composable
-fun Show(){
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-
-        val maxWidth = maxWidth
-        val maxHeight =maxHeight
-        val isTablet = maxWidth>600.dp
-
-        LogInScreen(maxWidth = maxWidth,
-            maxHeight = maxHeight,
-            isTablet=isTablet)
-
-    }
-
 }

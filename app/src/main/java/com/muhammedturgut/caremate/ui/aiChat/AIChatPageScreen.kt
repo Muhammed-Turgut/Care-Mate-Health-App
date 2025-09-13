@@ -1,8 +1,10 @@
 package com.muhammedturgut.caremate.ui.aiChat
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,12 +36,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 
 @Composable
-fun AIChatPageScreen(){
+fun AIChatPageScreen(navControllerAppHost: NavController){
 
     Box(
         modifier = Modifier
@@ -57,6 +60,13 @@ fun AIChatPageScreen(){
                 )
             )
     ) {
+        BackHandler {
+            navControllerAppHost.navigate("NavBarHostScreen"){
+                popUpTo(navControllerAppHost.graph.id){
+                    inclusive = true
+                }
+            }
+        }
 
         Column(
             modifier = Modifier
@@ -76,6 +86,13 @@ fun AIChatPageScreen(){
                     painter = painterResource(R.drawable.arrow_back_icon),
                     contentDescription = null,
                     modifier = Modifier.size(40.dp)
+                        .clickable(onClick = {
+                            navControllerAppHost.navigate("NavBarHostScreen"){
+                                popUpTo(navControllerAppHost.graph.id){
+                                    inclusive = true
+                                }
+                            }
+                        })
                 )
 
                 Row(
@@ -203,9 +220,3 @@ fun AIChatPageScreen(){
 }
 
 
-
-@Preview(showBackground = true)
-@Composable
-private fun Show(){
-    AIChatPageScreen()
-}

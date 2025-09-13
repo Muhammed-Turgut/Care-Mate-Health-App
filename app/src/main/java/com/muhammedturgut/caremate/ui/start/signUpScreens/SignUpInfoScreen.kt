@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
@@ -54,7 +55,8 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 @Composable
 fun SignUpScreenInfo(maxWidth: Dp,
                      maxHeight: Dp,
-                     isTablet: Boolean){
+                     isTablet: Boolean,
+                     navControllerAppHost: NavController){
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -271,7 +273,7 @@ fun SignUpScreenInfo(maxWidth: Dp,
 
             Button(
                 onClick = {
-
+                    navControllerAppHost.navigate("OnBoardingScreenStart")
                 },
                 modifier = Modifier
                     .constrainAs(btn) {
@@ -298,6 +300,22 @@ fun SignUpScreenInfo(maxWidth: Dp,
 
 
             }
+            Text(text="back",
+                fontFamily = PoppinSemiBold,
+                fontSize = 20.sp,
+                color = Color(0xFFB1B1B1),
+                modifier = Modifier.clickable(onClick = {
+                    navControllerAppHost.navigate("SignUpScreen"){
+                        popUpTo(navControllerAppHost.graph.id) { inclusive = true } //stacde biriken ekranları silemye yarıyor.
+                    }
+                }).constrainAs(backBtn) {
+
+                    start.linkTo(parent.start)
+                    end.linkTo(parent.end)
+                    top.linkTo(btn.bottom, margin = 16.dp)
+
+                }
+            )
 
 
 
@@ -312,10 +330,12 @@ fun SignUpScreenInfo(maxWidth: Dp,
                     color = Color(0xFF909090),
                     fontFamily = PoppinBold,
                 )
-                Text(text = " Giriş Yapın",
+                Text(text = " Log in",
                     fontSize = 12.sp,
                     modifier = Modifier.clickable(onClick = {
-                        //Login Ekranına navige edecek.
+                        navControllerAppHost.navigate("LogInScreen"){
+                            popUpTo(navControllerAppHost.graph.id) { inclusive = true } //stacde biriken ekranları silemye yarıyor.
+                        }
                     }),
                     color =Color(0xFF4BA9E6),
                     fontFamily = PoppinBold,
@@ -331,20 +351,3 @@ fun SignUpScreenInfo(maxWidth: Dp,
 
 }
 
-@SuppressLint("UnusedBoxWithConstraintsScope")
-@Preview(showBackground = true)
-@Composable
-private fun Show(){
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-
-        val maxWidth = maxWidth
-        val maxHeight =maxHeight
-        val isTablet = maxWidth>600.dp
-
-        SignUpScreenInfo(maxWidth = maxWidth,
-            maxHeight = maxHeight,
-            isTablet=isTablet)
-
-    }
-
-}

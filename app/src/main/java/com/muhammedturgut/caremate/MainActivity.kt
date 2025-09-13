@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.muhammedturgut.caremate.ui.analysis.AnalyzePageScreen
+import com.muhammedturgut.caremate.ui.navigation.AppNavHost
 
 
 class MainActivity : ComponentActivity() {
@@ -30,7 +30,10 @@ class MainActivity : ComponentActivity() {
                         val maxHeight =maxHeight
                         val isTablet = maxWidth>600.dp
 
-                        AnalyzePageScreen(maxWidth,maxHeight,isTablet)
+                        AppNavHost(
+                            maxWidth =maxWidth,
+                            maxHeight=maxHeight,
+                            isTablet=isTablet)
 
                     }
                 }

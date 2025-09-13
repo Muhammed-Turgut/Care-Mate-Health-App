@@ -8,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -27,9 +28,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -68,13 +71,16 @@ fun MainPageScreen(maxWidth: Dp,
                    maxHeight: Dp,
                    isTablet: Boolean){
 
+    val scrollState = rememberScrollState()
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color(0xFFFAFAFA))){
 
         Column(modifier = Modifier
             .fillMaxSize()
-            .padding(top = 16.dp)){
+            .padding(top = 16.dp)
+            .verticalScroll(scrollState)){
 
             HeaderBar()
             Spacer(modifier = Modifier.height(12.dp))
@@ -767,28 +773,6 @@ private fun NaturalTreatmentMethods(){
 
     }
 
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun Show(){
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-
-        val maxWidth = maxWidth
-        val maxHeight =maxHeight
-        val isTablet = maxWidth>600.dp
-
-        Column(modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally) {
-
-            NaturalTreatmentMethods()
-
-        }
-
-
-
-    }
 }
 
 
