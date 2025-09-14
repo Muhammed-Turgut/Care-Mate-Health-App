@@ -77,4 +77,7 @@ dependencies {
     // Coroutine desteklemek istersen (ViewModel içinde daha rahat çalışır)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
+    //lottie files animasyon kullanama kütüphanesi
+    implementation ("com.airbnb.android:lottie-compose:6.1.0")
+
 }

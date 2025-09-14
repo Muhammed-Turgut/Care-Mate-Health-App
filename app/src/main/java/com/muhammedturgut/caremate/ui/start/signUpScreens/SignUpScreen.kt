@@ -31,9 +31,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 import com.muhammedturgut.caremate.viewModel.UserViewModel
+import kotlinx.coroutines.delay
 import java.util.UUID
 
 @Composable
@@ -120,6 +126,10 @@ fun SignUpScreen(
                                 email = email,
                                 userName = nameAndSureName
                             )
+
+                            screen = 3
+                            delay(2000)
+
                             navControllerAppHost.navigate("OnBoardingScreenStart") {
                                 popUpTo(navControllerAppHost.graph.id) {
                                     inclusive = true
@@ -182,6 +192,8 @@ fun SignUpScreen(
                 screen = { screen = it }
             )
 
+            3->LoadingScreen()
+
             else -> SignUpStartScreen(
                 maxWidth = maxWidth,
                 maxHeight = maxHeight,
@@ -226,4 +238,33 @@ private fun PrivateMessage(text: String, image: Int) {
             )
         }
     }
+}
+
+@Composable
+fun LoadingScreen() {
+    Box(
+        modifier = Modifier.fillMaxSize()
+            .background(Color.White),
+        contentAlignment = Alignment.Center
+    ) {
+        LoadingAnimation(
+            modifier = Modifier.size(150.dp) // boyut ayarlayabilirsin
+        )
+    }
+}
+
+
+@Composable
+fun LoadingAnimation(modifier: Modifier = Modifier) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.loading_animation))
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever // Sonsuz döngü için
+    )
+
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = modifier
+    )
 }
