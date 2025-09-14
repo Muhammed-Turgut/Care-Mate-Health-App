@@ -2,6 +2,7 @@ package com.muhammedturgut.caremate.ui.start.login
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +25,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,8 +45,10 @@ import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.ui.start.login.LoginUiState.Success
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
@@ -54,7 +59,9 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 fun LogInScreen( maxWidth: Dp,
                  maxHeight: Dp,
                  isTablet:Boolean,
-                 navControllerAppHost: NavController){
+                 navControllerAppHost: NavController,
+                 logInViewModel: LogInViewModel = hiltViewModel()
+      ){
 
     Box(modifier = Modifier
         .fillMaxSize()
@@ -63,15 +70,31 @@ fun LogInScreen( maxWidth: Dp,
         val context = LocalContext.current
         val activity = context as? Activity
 
+        var textEmail by remember { mutableStateOf("") }
+        var textPassword by remember { mutableStateOf("")}
+        val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
+
+        val uiState by logInViewModel.uiState.collectAsState()
+        LaunchedEffect(uiState) {
+            when(uiState){
+                is Success -> navControllerAppHost.navigate("NavBarHostScreen"){
+                    popUpTo(navControllerAppHost.graph.id){
+                        inclusive = true
+                    }
+                }
+                is LoginUiState.Error ->  Toast.makeText(context,"Hatalı işlem", Toast.LENGTH_SHORT).show()
+
+                else -> Unit
+            }
+        }
+
         BackHandler {
 
             activity?.finish()
 
         }
 
-        var textEmail by remember { mutableStateOf("") }
-        var textPassword by remember { mutableStateOf("")}
-        val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
+
 
         ConstraintLayout(modifier = Modifier.fillMaxSize()){
 
@@ -217,7 +240,7 @@ fun LogInScreen( maxWidth: Dp,
 
             Button(
                 onClick = {
-                    navControllerAppHost.navigate("NavBarHostScreen")
+                    logInViewModel.login(email = textEmail, password = textPassword)
                 },
                 modifier = Modifier
                     .constrainAs(btn) {

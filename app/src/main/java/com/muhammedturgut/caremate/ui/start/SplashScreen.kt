@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -18,13 +22,56 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.ui.start.login.LoggedInViewModel
+import com.muhammedturgut.caremate.ui.start.login.LoginCheckUiState
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 import kotlinx.coroutines.delay
+import javax.annotation.meta.When
 
 @Composable
-fun SplashScreen(navControllerAppHost: NavController) {
+fun SplashScreen(
+    navControllerAppHost: NavController,
+    loggedInViewModel: LoggedInViewModel = hiltViewModel()
+) {
+
+    val isLoaded by remember { mutableStateOf(false) }
+    val uiState by loggedInViewModel.uiState.collectAsState()
+
+    LaunchedEffect(uiState) {
+        when(val state = uiState){
+            is LoginCheckUiState.Loading ->{
+
+            }
+            is LoginCheckUiState.Success ->{
+                delay(3000)
+                if (state.isLoggedIn){
+                    navControllerAppHost.navigate("NavBarHostScreen"){
+                        popUpTo(navControllerAppHost.graph.id){
+                            inclusive = true
+                        }
+                    }
+                }
+                else{
+                    navControllerAppHost.navigate("LogInScreen"){
+                        popUpTo(navControllerAppHost.graph.id){
+                            inclusive = true
+                        }
+                    }
+                }
+            }
+            is LoginCheckUiState.Error ->{
+                delay(3000)
+                navControllerAppHost.navigate("LogInScreen"){
+                    popUpTo(navControllerAppHost.graph.id){
+                        inclusive = true
+                    }
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -43,16 +90,6 @@ fun SplashScreen(navControllerAppHost: NavController) {
         }
 
 
-        LaunchedEffect(Unit) {
-
-            delay(3000)
-            navControllerAppHost.navigate("LogInScreen") {
-                popUpTo("LogInScreen") {
-                    inclusive = true
-                }
-                launchSingleTop = true
-            }
-        }
 
         ConstraintLayout(modifier = Modifier.fillMaxSize()) {
 

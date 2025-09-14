@@ -74,4 +74,7 @@ dependencies {
     //AppWrite
     implementation ("io.appwrite:sdk-for-android:5.1.0")
 
+    // Coroutine desteklemek istersen (ViewModel içinde daha rahat çalışır)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+
 }

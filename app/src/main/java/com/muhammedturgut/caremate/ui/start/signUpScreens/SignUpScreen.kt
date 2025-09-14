@@ -1,312 +1,229 @@
 package com.muhammedturgut.caremate.ui.start.signUpScreens
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import androidx.activity.compose.BackHandler
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
-import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
-import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
-import com.muhammedturgut.caremate.ui.theme.PoppinBold
-import com.muhammedturgut.caremate.ui.theme.PoppinMedium
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
-
+import com.muhammedturgut.caremate.viewModel.UserViewModel
+import java.util.UUID
 
 @Composable
-fun SignUpScreen(maxWidth: Dp,
-                maxHeight: Dp,
-                isTablet: Boolean,
-                 navControllerAppHost: NavController){
+fun SignUpScreen(
+    navControllerAppHost: NavController,
+    registerViewModel: RegisterViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel(),
+    maxWidth: Dp,
+    maxHeight: Dp,
+    isTablet: Boolean
+) {
 
-    Box(modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFF7F7F7))){
+    var email by remember { mutableStateOf("") }
+    var nameAndSureName by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var job by remember { mutableStateOf("") }
+    var dateOfBirth by remember { mutableStateOf("") }
+    var gender by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    var shouldRegister by remember { mutableStateOf(false) }
+    var userId by remember { mutableStateOf("") }
+    var showMessage by remember { mutableStateOf(false) }
+    var screen by remember { mutableStateOf(1) }
+    var hasNavigated by remember { mutableStateOf(false) } // Navigation kontrolü için
 
-        var textEmail by remember { mutableStateOf("") }
-        var textPassword by remember { mutableStateOf("")}
-        val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
+    Box(modifier = Modifier.fillMaxSize()) {
 
-        val context = LocalContext.current
-        val activity = context as? Activity
+        val uiState by registerViewModel.uiState.collectAsState()
 
-        BackHandler {
+        // Kayıt işlemini kontrol et - Güvenli null check
+        LaunchedEffect(shouldRegister) {
+            if (shouldRegister) {
+                Log.d("SignUpDebug", "shouldRegister: $shouldRegister")
+                Log.d("SignUpDebug", "nameAndSureName: '$nameAndSureName'")
+                Log.d("SignUpDebug", "email: '$email'")
+                Log.d("SignUpDebug", "password: '$password'")
+                Log.d("SignUpDebug", "job: '$job'")
+                Log.d("SignUpDebug", "dateOfBirth: '$dateOfBirth'")
+                Log.d("SignUpDebug", "gender: '$gender'")
 
-          navControllerAppHost.navigate("LogInScreen")
+                // Tüm alanların dolu olup olmadığını kontrol et
+                if (nameAndSureName.isNotBlank() &&
+                    email.isNotBlank() &&
+                    password.isNotBlank() &&
+                    job.isNotBlank() &&
+                    dateOfBirth.isNotBlank() &&
+                    gender.isNotBlank()
+                ) {
+                    try {
+                        userId = UUID.randomUUID().toString().replace("-", "")
+                        Log.d("SignUpDebug", "Kayıt işlemi başlatılıyor - userId: $userId")
+                        registerViewModel.register(
+                            email = email,
+                            password = password,
+                            userId = userId,
+                            userName = nameAndSureName
+                        )
+                        shouldRegister = false // Tekrar tetiklenmemesi için
+                        showMessage = true
+                    } catch (e: Exception) {
+                        Log.e("SignUpDebug", "Kayıt işlemi sırasında hata: ${e.message}")
+                        shouldRegister = false
+                        showMessage = false
+                    }
+                } else {
+                    Log.d("SignUpDebug", "Kayıt işlemi başlatılamıyor - eksik alanlar var")
+                    shouldRegister = false
 
+
+                    Toast.makeText(context, "Lütfen tüm alanları doldurun", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
-        ConstraintLayout(modifier = Modifier.fillMaxSize()){
-
-            val (logo, title1,title2,textField,textFiled1,textFiled2,btn,title3,image1,title4) = createRefs()
-
-            Image(
-                painter = painterResource(R.drawable.logo),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(232.dp,90.dp)
-                    .constrainAs(logo) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        top.linkTo(parent.top, margin = 90.dp)
-                    })
-
-            Text(text = "Welcome",
-                fontSize = 24.sp,
-                fontFamily = PoppinMedium,
-                color = Color(0xFF70A056),
-                modifier = Modifier.constrainAs(title1) {
-
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    top.linkTo(logo.bottom, margin = 16.dp)
-
-                }
-            )
-
-            Text(text = "Sign up",
-                fontSize = 24.sp,
-                color = Color(0xFF4BA9E4),
-                fontFamily = PoppinSemiBold,
-                modifier = Modifier.constrainAs(title2) {
-
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                    top.linkTo(title1.bottom)
-
-                }
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .constrainAs(textField) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        top.linkTo(
-                            title2.top,
-                            margin = if (isTablet) 72.dp else 82.dp
-                        )
+        // UI State değişikliklerini dinle
+        LaunchedEffect(uiState, hasNavigated) {
+            when (uiState) {
+                is RegisterUiState.Success -> {
+                    if (!hasNavigated) {
+                        try {
+                            hasNavigated = true
+                            userViewModel.createUserData(
+                                userId = userId,
+                                email = email,
+                                userName = nameAndSureName
+                            )
+                            navControllerAppHost.navigate("OnBoardingScreenStart") {
+                                popUpTo(navControllerAppHost.graph.id) {
+                                    inclusive = true
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e("SignUpDebug", "Navigation hatası: ${e.message}")
+                            hasNavigated = false
+                        }
                     }
-                    .padding(horizontal = min(maxWidth * 0.1f, 24.dp))
-            ) {
-                // Üst etiket
-                Text(
-                    text = "name and surname",
-                    fontSize = 14.sp,
-                    color = Color(0xFF6B6B6B),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 6.dp, start = 12.dp)
-                )
-
-                // TextField
-                OutlinedTextField(
-                    value = textEmail,
-                    onValueChange = { textEmail = it },
-                    placeholder = { Text("name surname", color = Color.Gray) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(min(maxWidth * 0.03f, 12.dp)),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color(0xFFFFFFFF), // açık gri arka plan
-                        unfocusedContainerColor = Color(0xFFFFFFFF),
-                        focusedBorderColor = Color(0xFFFFFFFF), // çok açık kenarlık
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        cursorColor = Color.Black
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp, max = 84.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .constrainAs(textFiled1) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        top.linkTo(textField.bottom, margin = min(maxHeight * 0.15f, 18.dp))
-                    }
-                    .padding(horizontal = min(maxWidth * 0.1f, 24.dp))
-            ) {
-                // Üst etiket
-                Text(
-                    text = "Email address",
-                    fontSize = 14.sp,
-                    color = Color(0xFF6B6B6B),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 6.dp, start = 12.dp)
-                )
-
-                // TextField
-                OutlinedTextField(
-                    value = textEmail,
-                    onValueChange = { textEmail = it },
-                    placeholder = { Text("username@gmail.com", color = Color.Gray) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(min(maxWidth * 0.03f, 12.dp)),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color(0xFFFFFFFF), // açık gri arka plan
-                        unfocusedContainerColor = Color(0xFFFFFFFF),
-                        focusedBorderColor = Color(0xFFFFFFFF), // çok açık kenarlık
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        cursorColor = Color.Black
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp, max = 84.dp)
-                )
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .constrainAs(textFiled2) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        top.linkTo(
-                            textFiled1.bottom,
-                            margin = min(maxHeight * 0.15f, 18.dp)
-                        )
-                    }
-                    .padding(horizontal = min(maxWidth * 0.1f, 24.dp))
-            ) {
-                // Üst etiket
-                Text(
-                    text = "Password",
-                    fontSize = 14.sp,
-                    color = Color(0xFF6B6B6B),
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 6.dp, start = 12.dp)
-                )
-
-                // TextField
-                OutlinedTextField(
-                    value = textPassword,
-                    onValueChange = { textPassword = it },
-                    placeholder = { Text("********", color = Color.Gray) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(min(maxWidth * 0.03f, 12.dp)),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color(0xFFFFFFFF), // açık gri arka plan
-                        unfocusedContainerColor = Color(0xFFFFFFFF),
-                        focusedBorderColor = Color(0xFFFFFFFF), // çok açık kenarlık
-                        unfocusedBorderColor = Color(0xFFE0E0E0),
-                        cursorColor = Color.Black
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 48.dp, max = 84.dp)
-                )
-
-            }
-
-            Button(
-                onClick = {
-                navControllerAppHost.navigate("SignUpScreenInfo")
-                },
-                modifier = Modifier
-                    .constrainAs(btn) {
-                        start.linkTo(parent.start)
-                        end.linkTo(parent.end)
-                        top.linkTo(textFiled2.bottom, margin = 16.dp)
-                    }
-                    .fillMaxWidth()
-                    .padding(horizontal = min(maxWidth * 0.1f, 40.dp)) // responsive yatay padding
-                    .heightIn(min = max(maxHeight * 0.06f, 48.dp), max = max(maxHeight * 0.08f, 64.dp)) // responsive yükseklik
-                    .widthIn(max = contentMaxWidth)
-                    .clip(CircleShape),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4FA5E3))
-            ) {
-                Row {
-                    Text(
-                        text = "Next",
-                        color = Color.White,
-                        fontSize = 18.sp,
-                        fontFamily = PoppinBold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Image(painter = painterResource(R.drawable.arrow_right_circle),
-                        contentDescription = null)
                 }
 
+                is RegisterUiState.Error -> {
+                    if (showMessage) {
+                        Toast.makeText(
+                            context,
+                            (uiState as RegisterUiState.Error).message,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        showMessage = false
+                    }
+                }
 
+                else -> Unit
             }
-
-
-
-            Row(modifier = Modifier.constrainAs(title4) {
-                start.linkTo(parent.start)
-                end.linkTo(parent.end)
-                bottom.linkTo(parent.bottom,margin = 24.dp)
-            }) {
-
-                Text(text = "Do you have an account?",
-                    fontSize = 12.sp,
-                    color = Color(0xFF6B6B6B),
-                    fontFamily = PoppinBold,
-                )
-                Text(text = " Log in",
-                    fontSize = 12.sp,
-                    modifier = Modifier.clickable(onClick = {
-                       navControllerAppHost.navigate("LogInScreen"){
-                           popUpTo(navControllerAppHost.graph.id) { inclusive = true } //stacde biriken ekranları silemye yarıyor.
-                       }
-                    }),
-                    color = Color(0xFF4FA5E3),
-                    fontFamily = PoppinBold,
-                )
-
-            }
-
-
         }
 
+        // Mesaj gösterimi - Güvenli kontrol
+        when {
+            showMessage && uiState is RegisterUiState.Loading -> {
+                PrivateMessage("Registration in progress...", R.drawable.check_circle_icon)
+            }
+            showMessage && uiState is RegisterUiState.Error -> {
+                PrivateMessage("Registration failed", R.drawable.error_icon)
+            }
+        }
 
+        // Screen navigation
+        when (screen) {
+            1 -> SignUpStartScreen(
+                maxWidth = maxWidth,
+                maxHeight = maxHeight,
+                isTablet = isTablet,
+                navControllerAppHost = navControllerAppHost,
+                name = { nameAndSureName = it },
+                password = { password = it },
+                email = { email = it },
+                screen = { screen = it }
+            )
+
+            2 -> SignUpScreenInfo(
+                maxWidth = maxWidth,
+                maxHeight = maxHeight,
+                isTablet = isTablet,
+                navControllerAppHost = navControllerAppHost,
+                job = { job = it },
+                gender = { gender = it },
+                dateOfBirth = { dateOfBirth = it },
+                registrationCheck = { shouldRegister = it },
+                screen = { screen = it }
+            )
+
+            else -> SignUpStartScreen(
+                maxWidth = maxWidth,
+                maxHeight = maxHeight,
+                isTablet = isTablet,
+                navControllerAppHost = navControllerAppHost,
+                name = { nameAndSureName = it },
+                password = { password = it },
+                email = { email = it },
+                screen = { screen = it }
+            )
+        }
     }
-
 }
 
+@Composable
+private fun PrivateMessage(text: String, image: Int) {
+    Box(
+        modifier = Modifier
+            .size(280.dp, 44.dp)
+            .border(0.5.dp, Color(0xFFA2A2A2), RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(4.dp))
+            .background(Color.White)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Image(
+                painter = painterResource(image),
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(8.dp)
+                    .size(24.dp, 24.dp)
+            )
+
+            Text(
+                text = text,
+                fontSize = 14.sp,
+                fontFamily = PoppinSemiBold,
+                modifier = Modifier.padding(8.dp)
+            )
+        }
+    }
+}

@@ -13,6 +13,7 @@ import com.muhammedturgut.caremate.ui.start.onboardingScreens.OnBoardingScreenSe
 import com.muhammedturgut.caremate.ui.start.onboardingScreens.OnBoardingScreenStart
 import com.muhammedturgut.caremate.ui.start.signUpScreens.SignUpScreen
 import com.muhammedturgut.caremate.ui.start.signUpScreens.SignUpScreenInfo
+import com.muhammedturgut.caremate.ui.start.signUpScreens.SignUpStartScreen
 
 
 @Composable
@@ -44,20 +45,13 @@ fun AppNavHost( maxWidth: Dp,
 
         composable("SignUpScreen"){
             SignUpScreen(
+                navControllerAppHost=navControllerAppHost,
                 maxWidth = maxWidth,
                 maxHeight = maxHeight,
-                isTablet=isTablet,
-                navControllerAppHost=navControllerAppHost)
+                isTablet=isTablet,)
         }
 
-        composable("SignUpScreenInfo"){
-            SignUpScreenInfo(
-                maxWidth = maxWidth,
-                maxHeight = maxHeight,
-                isTablet=isTablet,
-                navControllerAppHost=navControllerAppHost
-            )
-        }
+
 
         composable("OnBoardingScreenStart"){
             OnBoardingScreenStart(
