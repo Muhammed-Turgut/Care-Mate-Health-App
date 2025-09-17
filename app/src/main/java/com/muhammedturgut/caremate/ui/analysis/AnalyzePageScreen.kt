@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.ui.start.login.LogInScreen
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
@@ -70,7 +71,8 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 @Composable
 fun AnalyzePageScreen(maxWidth: Dp,
                       maxHeight: Dp,
-                      isTablet:Boolean
+                      isTablet:Boolean,
+                      navControllerAppHost: NavController
 
 ){
     Box(modifier = Modifier
@@ -105,7 +107,8 @@ fun AnalyzePageScreen(maxWidth: Dp,
 
             AnalyzedDiseasesRow(maxWidth = maxWidth,
                 maxHeight = maxHeight,
-                isTablet=isTablet)
+                isTablet=isTablet,
+                navControllerAppHost = navControllerAppHost)
 
         }
     }
@@ -374,7 +377,8 @@ private fun SearchBar(
 @Composable
 private fun AnalyzedDiseasesRow(maxWidth: Dp,
                                 maxHeight: Dp,
-                                isTablet:Boolean){
+                                isTablet:Boolean,
+                                navControllerAppHost: NavController){
 
     val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
 
@@ -512,7 +516,11 @@ private fun AnalyzedDiseasesRow(maxWidth: Dp,
 
                 Button(
                     onClick = {
-                        // navControllerAppHost.navigate("NavBarHost")
+                        navControllerAppHost.navigate("PostureCameraScreen"){
+                            popUpTo(navControllerAppHost.graph.id){
+                                inclusive = true
+                            }
+                        }
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -539,22 +547,6 @@ private fun AnalyzedDiseasesRow(maxWidth: Dp,
             }
 
         }
-
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun Show(){
-    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-
-        val maxWidth = maxWidth
-        val maxHeight =maxHeight
-        val isTablet = maxWidth>600.dp
-
-        AnalyzePageScreen(maxWidth = maxWidth,
-            maxHeight = maxHeight,
-            isTablet=isTablet)
 
     }
 }

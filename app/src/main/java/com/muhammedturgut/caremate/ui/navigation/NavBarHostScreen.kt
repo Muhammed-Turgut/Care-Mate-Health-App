@@ -92,7 +92,8 @@ fun NavBarHostScreen(
                 "analysis" -> AnalyzePageScreen(
                     maxWidth = maxWidth,
                     maxHeight = maxHeight,
-                    isTablet = isTablet
+                    isTablet = isTablet,
+                    navControllerAppHost = navControllerAppHost
                 )
 
                 "profile" -> ProfilePageScreen()
