@@ -9,7 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.muhammedturgut.caremate.ui.aiChat.AIChatPageScreen
 import com.muhammedturgut.caremate.ui.analysis.AnalysisViewModel
 import com.muhammedturgut.caremate.ui.analysis.PositionAnalysisScreen
-import com.muhammedturgut.caremate.ui.camera.PostureCameraScreen
+import com.muhammedturgut.caremate.ui.analysis.PostureCameraScreen
 import com.muhammedturgut.caremate.ui.start.SplashScreen
 import com.muhammedturgut.caremate.ui.start.login.LogInScreen
 import com.muhammedturgut.caremate.ui.start.onboardingScreens.OnBoardingScreenFinish

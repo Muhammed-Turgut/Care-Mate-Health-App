@@ -1,6 +1,8 @@
 package com.muhammedturgut.caremate.ui.home
 
 
+import android.R.attr.maxWidth
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -8,6 +10,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,10 +23,12 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
@@ -35,7 +40,10 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,9 +67,13 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.min
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.muhammedturgut.caremate.data.local.room.RoomViewModel
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import kotlinx.coroutines.delay
@@ -69,7 +81,10 @@ import kotlinx.coroutines.delay
 @Composable
 fun MainPageScreen(maxWidth: Dp,
                    maxHeight: Dp,
-                   isTablet: Boolean){
+                   isTablet: Boolean,
+                   navControllerAppHost: NavController,
+                   roomViewModel: RoomViewModel = hiltViewModel()
+){
 
     val scrollState = rememberScrollState()
 
@@ -77,34 +92,42 @@ fun MainPageScreen(maxWidth: Dp,
         .fillMaxSize()
         .background(Color(0xFFFAFAFA))){
 
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 16.dp)
-            .verticalScroll(scrollState)){
 
-            HeaderBar()
-            Spacer(modifier = Modifier.height(12.dp))
-            SearchBar()
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 16.dp)
+                    .verticalScroll(scrollState)
+            ) {
 
-            Spacer(modifier = Modifier.height(12.dp))
+                HeaderBar()
+                Spacer(modifier = Modifier.height(12.dp))
+                SearchBar()
 
-            ReliefArea()
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+                ReliefArea()
 
-            AIChat(maxWidth = maxWidth,
-                maxHeight = maxHeight,
-                isTablet=isTablet)
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+                AIChat(
+                    maxWidth = maxWidth,
+                    maxHeight = maxHeight,
+                    isTablet = isTablet,
+                    navControllerAppHost = navControllerAppHost
+                )
 
-            PossibleDiseases(maxWidth = maxWidth,
-                maxHeight = maxHeight,
-                isTablet=isTablet)
+                Spacer(modifier = Modifier.height(12.dp))
 
-            Spacer(modifier = Modifier.height(12.dp))
+                PossibleDiseases(
+                    maxWidth = maxWidth,
+                    maxHeight = maxHeight,
+                    isTablet = isTablet
+                )
 
-            NaturalTreatmentMethods()
+                Spacer(modifier = Modifier.height(12.dp))
+
+                NaturalTreatmentMethods()
 
         }
 
@@ -323,7 +346,8 @@ private fun ReliefArea() {
 private fun AIChat(
     maxWidth: Dp,
     maxHeight: Dp,
-    isTablet: Boolean
+    isTablet: Boolean,
+    navControllerAppHost: NavController
 ) {
     val contentMaxWidth = if (maxWidth < 600.dp) maxWidth else 600.dp
     val imageSize = if (isTablet) 150.dp else 120.dp
@@ -389,7 +413,11 @@ private fun AIChat(
 
                     Button(
                         onClick = {
-                            // navControllerAppHost.navigate("NavBarHost")
+                            navControllerAppHost.navigate("AIChatPageScreen"){
+                                popUpTo(navControllerAppHost.graph.id){
+                                    inclusive = true
+                                }
+                            }
                         },
                         modifier = Modifier
                             .widthIn(
@@ -803,3 +831,19 @@ val diseasesList = listOf<DiseasesItem>(
         explanation = "Slow down the progression of the hernia with special exercises",
         progressBar = 0.4f)
 )
+
+
+
+@SuppressLint("UnusedBoxWithConstraintsScope")
+@Preview(showBackground = true)
+@Composable
+private fun Show(){
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()){
+        val maxWidth = maxWidth
+        val maxHeight = maxHeight
+        val isTablet = maxWidth >600.dp
+
+       // addDailyData(maxWidth,maxHeight,isTablet)
+    }
+
+}

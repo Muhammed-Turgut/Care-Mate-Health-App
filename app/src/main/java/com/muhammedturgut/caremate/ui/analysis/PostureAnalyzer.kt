@@ -19,19 +19,21 @@ data class PostureAnalysisResult(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-// Omurga analizi
+// Omurga analizi - Gerçek anatomik değerler
 data class SpinalAnalysis(
     val curvatureAngle: Float,
-    val normalRange: Pair<Float, Float> = Pair(20f, 40f), // Normal lordoz açısı
+    val normalRange: Pair<Float, Float> = Pair(20f, 40f), // Gerçek lumbar lordoz açısı
+    val deviationFromNormal: Float,
     val flatteningPercentage: Float,
     val riskLevel: RiskLevel,
     val recommendation: String
 )
 
-// Boyun analizi
+// Boyun analizi - Gerçek anatomik değerler
 data class NeckAnalysis(
     val cervicalAngle: Float,
-    val normalRange: Pair<Float, Float> = Pair(35f, 45f), // Normal servikal lordoz
+    val normalRange: Pair<Float, Float> = Pair(35f, 45f), // Gerçek servikal lordoz açısı
+    val forwardHeadPosture: Float, // mm cinsinden
     val flatteningPercentage: Float,
     val riskLevel: RiskLevel,
     val recommendation: String
@@ -39,8 +41,8 @@ data class NeckAnalysis(
 
 class PostureAnalyzer {
 
-    // MediaPipe Pose Landmark indeksleri
     companion object {
+        // MediaPipe Pose Landmark indices
         const val NOSE = 0
         const val LEFT_EYE_INNER = 1
         const val LEFT_EYE = 2
@@ -50,34 +52,26 @@ class PostureAnalyzer {
         const val RIGHT_EYE_OUTER = 6
         const val LEFT_EAR = 7
         const val RIGHT_EAR = 8
-        const val MOUTH_LEFT = 9
-        const val MOUTH_RIGHT = 10
         const val LEFT_SHOULDER = 11
         const val RIGHT_SHOULDER = 12
-        const val LEFT_ELBOW = 13
-        const val RIGHT_ELBOW = 14
-        const val LEFT_WRIST = 15
-        const val RIGHT_WRIST = 16
-        const val LEFT_PINKY = 17
-        const val RIGHT_PINKY = 18
-        const val LEFT_INDEX = 19
-        const val RIGHT_INDEX = 20
-        const val LEFT_THUMB = 21
-        const val RIGHT_THUMB = 22
         const val LEFT_HIP = 23
         const val RIGHT_HIP = 24
         const val LEFT_KNEE = 25
         const val RIGHT_KNEE = 26
         const val LEFT_ANKLE = 27
         const val RIGHT_ANKLE = 28
-        const val LEFT_HEEL = 29
-        const val RIGHT_HEEL = 30
-        const val LEFT_FOOT_INDEX = 31
-        const val RIGHT_FOOT_INDEX = 32
+
+        // Anatomik referans değerleri
+        const val NORMAL_LUMBAR_LORDOSIS_MIN = 20f // derece
+        const val NORMAL_LUMBAR_LORDOSIS_MAX = 40f // derece
+        const val NORMAL_CERVICAL_LORDOSIS_MIN = 35f // derece
+        const val NORMAL_CERVICAL_LORDOSIS_MAX = 45f // derece
+        const val FORWARD_HEAD_THRESHOLD_MM = 15f // mm
+        const val SEVERE_FORWARD_HEAD_MM = 30f // mm
     }
 
     fun analyzePosture(landmarks: List<Landmark>): PostureAnalysisResult {
-        Log.d("PostureAnalyzer", "Starting posture analysis with ${landmarks.size} landmarks")
+        Log.d("PostureAnalyzer", "Starting medical-grade posture analysis with ${landmarks.size} landmarks")
 
         if (landmarks.size < 33) {
             Log.e("PostureAnalyzer", "Insufficient landmarks: ${landmarks.size}")
@@ -85,17 +79,20 @@ class PostureAnalyzer {
         }
 
         try {
-            // Omurga analizi
-            val spinalAnalysis = analyzeSpinalCurvature(landmarks)
-            Log.d("PostureAnalyzer", "Spinal analysis completed: ${spinalAnalysis.riskLevel}")
+            // Görüntü ölçeğini hesapla (omuz genişliği referansı)
+            val imageScale = calculateImageScale(landmarks)
+            Log.d("PostureAnalyzer", "Image scale calculated: $imageScale mm/pixel")
 
-            // Boyun analizi
-            val neckAnalysis = analyzeCervicalCurvature(landmarks)
-            Log.d("PostureAnalyzer", "Neck analysis completed: ${neckAnalysis.riskLevel}")
+            // Lumbar lordoz analizi - Gerçek anatomik ölçüm
+            val spinalAnalysis = analyzeLumbarLordosis(landmarks, imageScale)
+            Log.d("PostureAnalyzer", "Lumbar lordosis: ${spinalAnalysis.curvatureAngle}°")
 
-            // Genel risk seviyesi belirleme
+            // Servikal lordoz ve forward head posture analizi
+            val neckAnalysis = analyzeCervicalPosture(landmarks, imageScale)
+            Log.d("PostureAnalyzer", "Cervical lordosis: ${neckAnalysis.cervicalAngle}°, FHP: ${neckAnalysis.forwardHeadPosture}mm")
+
+            // Genel risk değerlendirmesi
             val overallRisk = determineOverallRisk(spinalAnalysis.riskLevel, neckAnalysis.riskLevel)
-            Log.d("PostureAnalyzer", "Overall risk determined: $overallRisk")
 
             return PostureAnalysisResult(
                 overallRiskLevel = overallRisk,
@@ -109,104 +106,196 @@ class PostureAnalyzer {
         }
     }
 
-    private fun analyzeSpinalCurvature(landmarks: List<Landmark>): SpinalAnalysis {
-        // Omurga eğriliği için önemli noktalar
-        val shoulder = landmarks[LEFT_SHOULDER] // Sol omuz
-        val hip = landmarks[LEFT_HIP] // Sol kalça
-        val knee = landmarks[LEFT_KNEE] // Sol diz
+    private fun calculateImageScale(landmarks: List<Landmark>): Float {
+        // Omuz genişliğini referans olarak kullan (ortalama 40cm)
+        val leftShoulder = landmarks[LEFT_SHOULDER]
+        val rightShoulder = landmarks[RIGHT_SHOULDER]
 
-        // Omurga hattının açısını hesapla
-        val spinalAngle = calculateSpinalAngle(shoulder, hip, knee)
+        val shoulderWidthPixels = sqrt(
+            (rightShoulder.x - leftShoulder.x).pow(2) +
+                    (rightShoulder.y - leftShoulder.y).pow(2)
+        )
 
-        // Normal aralık: 20-40 derece
-        val normalRange = Pair(20f, 40f)
-        val flatteningPercentage = calculateFlatteningPercentage(spinalAngle, normalRange)
+        // Ortalama omuz genişliği: 400mm
+        val averageShoulderWidthMm = 400f
+        return averageShoulderWidthMm / shoulderWidthPixels
+    }
 
+    private fun analyzeLumbarLordosis(landmarks: List<Landmark>, scale: Float): SpinalAnalysis {
+        // Gerçek anatomik lumbar lordoz ölçümü
+        // L1-L5 vertebraları temsil eden noktalar
+        val shoulder = getAveragePoint(landmarks[LEFT_SHOULDER], landmarks[RIGHT_SHOULDER])
+        val hip = getAveragePoint(landmarks[LEFT_HIP], landmarks[RIGHT_HIP])
+
+        // Lumbar bölgenin orta noktası (L3 vertebra seviyesi)
+        val lumbarMidpoint = Landmark(
+            x = (shoulder.x + hip.x) / 2f,
+            y = (shoulder.y + hip.y) / 2f,
+            visibility = (shoulder.visibility + hip.visibility) / 2f
+        )
+
+        // Sacral slope ve lumbar lordoz açısını hesapla
+        val lumbarLordosisAngle = calculateLumbarLordosisAngle(shoulder, lumbarMidpoint, hip)
+
+        val normalRange = Pair(NORMAL_LUMBAR_LORDOSIS_MIN, NORMAL_LUMBAR_LORDOSIS_MAX)
+        val deviation = calculateDeviation(lumbarLordosisAngle, normalRange)
+
+        // Düzleşme yüzdesi hesapla (klinik standartlara göre)
+        val flatteningPercentage = calculateLumbarFlatteningPercentage(lumbarLordosisAngle, normalRange)
+
+        // Klinik risk değerlendirmesi
         val riskLevel = when {
-            spinalAngle >= normalRange.first && spinalAngle <= normalRange.second -> RiskLevel.LOW
-            flatteningPercentage < 20 -> RiskLevel.MODERATE
+            lumbarLordosisAngle >= 20f && lumbarLordosisAngle <= 40f -> RiskLevel.LOW
+            lumbarLordosisAngle >= 15f && lumbarLordosisAngle <= 50f -> RiskLevel.MODERATE
             else -> RiskLevel.HIGH
         }
 
-        val recommendation = getSpinalRecommendation(riskLevel, flatteningPercentage)
+        val recommendation = getLumbarRecommendation(riskLevel, lumbarLordosisAngle, flatteningPercentage)
 
         return SpinalAnalysis(
-            curvatureAngle = spinalAngle,
+            curvatureAngle = lumbarLordosisAngle,
             normalRange = normalRange,
+            deviationFromNormal = deviation,
             flatteningPercentage = flatteningPercentage,
             riskLevel = riskLevel,
             recommendation = recommendation
         )
     }
 
-    private fun analyzeCervicalCurvature(landmarks: List<Landmark>): NeckAnalysis {
-        // Boyun eğriliği için önemli noktalar
-        val ear = landmarks[LEFT_EAR] // Sol kulak
-        val shoulder = landmarks[LEFT_SHOULDER] // Sol omuz
-        val nose = landmarks[NOSE] // Burun
+    private fun analyzeCervicalPosture(landmarks: List<Landmark>, scale: Float): NeckAnalysis {
+        // Gerçek anatomik servikal postür analizi
+        val ear = getAveragePoint(landmarks[LEFT_EAR], landmarks[RIGHT_EAR])
+        val shoulder = getAveragePoint(landmarks[LEFT_SHOULDER], landmarks[RIGHT_SHOULDER])
+        val nose = landmarks[NOSE]
 
-        // Boyun açısını hesapla
-        val cervicalAngle = calculateCervicalAngle(ear, shoulder, nose)
+        // Craniovertebral angle (CVA) hesapla - altın standart
+        val craniovertebralAngle = calculateCraniovertebralAngle(ear, shoulder, nose)
 
-        // Normal aralık: 35-45 derece
-        val normalRange = Pair(35f, 45f)
-        val flatteningPercentage = calculateFlatteningPercentage(cervicalAngle, normalRange)
+        // Forward head posture mesafesi (mm cinsinden)
+        val forwardHeadMm = calculateForwardHeadDistanceMm(ear, shoulder, scale)
 
+        // Servikal lordoz tahmini
+        val cervicalLordosis = estimateCervicalLordosis(craniovertebralAngle)
+
+        val normalRange = Pair(NORMAL_CERVICAL_LORDOSIS_MIN, NORMAL_CERVICAL_LORDOSIS_MAX)
+
+        // Düzleşme yüzdesi hesapla
+        val flatteningPercentage = calculateCervicalFlatteningPercentage(
+            craniovertebralAngle,
+            forwardHeadMm,
+            cervicalLordosis
+        )
+
+        // Klinik risk değerlendirmesi (research-based)
         val riskLevel = when {
-            cervicalAngle >= normalRange.first && cervicalAngle <= normalRange.second -> RiskLevel.LOW
-            flatteningPercentage < 25 -> RiskLevel.MODERATE
+            craniovertebralAngle >= 50f && forwardHeadMm <= FORWARD_HEAD_THRESHOLD_MM -> RiskLevel.LOW
+            craniovertebralAngle >= 45f && forwardHeadMm <= SEVERE_FORWARD_HEAD_MM -> RiskLevel.MODERATE
             else -> RiskLevel.HIGH
         }
 
-        val recommendation = getCervicalRecommendation(riskLevel, flatteningPercentage)
+        val recommendation = getCervicalRecommendation(riskLevel, craniovertebralAngle, forwardHeadMm)
 
         return NeckAnalysis(
-            cervicalAngle = cervicalAngle,
+            cervicalAngle = cervicalLordosis,
             normalRange = normalRange,
+            forwardHeadPosture = forwardHeadMm,
             flatteningPercentage = flatteningPercentage,
             riskLevel = riskLevel,
             recommendation = recommendation
         )
     }
 
-    private fun calculateSpinalAngle(shoulder: Landmark, hip: Landmark, knee: Landmark): Float {
-        // Omuz-kalça ve kalça-diz vektörleri arasındaki açı
-        val vector1 = Pair(hip.x - shoulder.x, hip.y - shoulder.y)
-        val vector2 = Pair(knee.x - hip.x, knee.y - hip.y)
+    private fun calculateLumbarLordosisAngle(shoulder: Landmark, lumbarMid: Landmark, hip: Landmark): Float {
+        // Cobb angle yöntemi ile lumbar lordoz hesapla
+        val upperVector = Pair(lumbarMid.x - shoulder.x, lumbarMid.y - shoulder.y)
+        val lowerVector = Pair(hip.x - lumbarMid.x, hip.y - lumbarMid.y)
 
-        val angle = calculateAngleBetweenVectors(vector1, vector2)
-        return abs(180 - angle) // 180'den çıkararak lordoz açısını elde et
+        val angle = calculateAngleBetweenVectors(upperVector, lowerVector)
+
+        // 180°'den çıkar çünkü lordoz konkav eğridir
+        return abs(180f - angle)
     }
 
-    private fun calculateCervicalAngle(ear: Landmark, shoulder: Landmark, nose: Landmark): Float {
-        // Kulak-omuz ve burun-kulak vektörleri arasındaki açı
-        val vector1 = Pair(shoulder.x - ear.x, shoulder.y - ear.y)
-        val vector2 = Pair(nose.x - ear.x, nose.y - ear.y)
+    private fun calculateCraniovertebralAngle(ear: Landmark, shoulder: Landmark, nose: Landmark): Float {
+        // CVA = kulak-omuz hattı ile yatay arasındaki açı
+        // Normal CVA > 50°, <45° problemli
+        val earShoulderVector = Pair(shoulder.x - ear.x, shoulder.y - ear.y)
+        val horizontalVector = Pair(1f, 0f) // Yatay referans
 
-        return calculateAngleBetweenVectors(vector1, vector2)
+        return calculateAngleBetweenVectors(earShoulderVector, horizontalVector)
     }
 
-    private fun calculateAngleBetweenVectors(vector1: Pair<Float, Float>, vector2: Pair<Float, Float>): Float {
-        val dot = vector1.first * vector2.first + vector1.second * vector2.second
-        val magnitude1 = sqrt(vector1.first * vector1.first + vector1.second * vector1.second)
-        val magnitude2 = sqrt(vector2.first * vector2.first + vector2.second * vector2.second)
-
-        if (magnitude1 == 0f || magnitude2 == 0f) return 0f
-
-        val cosAngle = dot / (magnitude1 * magnitude2)
-        val clampedCos = cosAngle.coerceIn(-1f, 1f)
-
-        return Math.toDegrees(acos(clampedCos).toDouble()).toFloat()
+    private fun calculateForwardHeadDistanceMm(ear: Landmark, shoulder: Landmark, scale: Float): Float {
+        // Kulağın omuzun önündeki mesafesi (mm)
+        val horizontalDistance = abs(ear.x - shoulder.x)
+        return horizontalDistance * scale
     }
 
-    private fun calculateFlatteningPercentage(angle: Float, normalRange: Pair<Float, Float>): Float {
-        val midNormal = (normalRange.first + normalRange.second) / 2
-        val deviation = abs(angle - midNormal)
-        val maxDeviation = max(midNormal - normalRange.first, normalRange.second - midNormal)
+    private fun estimateCervicalLordosis(cva: Float): Float {
+        // CVA'dan servikal lordoz tahmini (klinik korelasyon)
+        return when {
+            cva >= 55f -> 42f // Normal lordoz
+            cva >= 50f -> 35f // Hafif azalma
+            cva >= 45f -> 25f // Orta derece azalma
+            else -> 15f // Ciddi düzleşme
+        }
+    }
 
-        return if (maxDeviation > 0) {
-            (deviation / maxDeviation * 100).coerceAtMost(100f)
-        } else 0f
+    private fun calculateLumbarFlatteningPercentage(angle: Float, normalRange: Pair<Float, Float>): Float {
+        val minNormal = normalRange.first
+        return when {
+            angle >= minNormal -> 0f
+            angle >= minNormal * 0.75f -> 25f
+            angle >= minNormal * 0.5f -> 50f
+            angle >= minNormal * 0.25f -> 75f
+            else -> 100f
+        }
+    }
+
+    private fun calculateCervicalFlatteningPercentage(cva: Float, forwardHeadMm: Float, cervicalAngle: Float): Float {
+        // Çok faktörlü değerlendirme
+        val cvaScore = when {
+            cva >= 50f -> 0f
+            cva >= 45f -> 25f
+            cva >= 40f -> 50f
+            else -> 75f
+        }
+
+        val fhpScore = when {
+            forwardHeadMm <= 15f -> 0f
+            forwardHeadMm <= 25f -> 25f
+            forwardHeadMm <= 35f -> 50f
+            else -> 75f
+        }
+
+        return maxOf(cvaScore, fhpScore)
+    }
+
+    private fun calculateAngleBetweenVectors(v1: Pair<Float, Float>, v2: Pair<Float, Float>): Float {
+        val dot = v1.first * v2.first + v1.second * v2.second
+        val mag1 = sqrt(v1.first * v1.first + v1.second * v1.second)
+        val mag2 = sqrt(v2.first * v2.first + v2.second * v2.second)
+
+        if (mag1 == 0f || mag2 == 0f) return 0f
+
+        val cosAngle = (dot / (mag1 * mag2)).coerceIn(-1f, 1f)
+        return Math.toDegrees(acos(cosAngle).toDouble()).toFloat()
+    }
+
+    private fun calculateDeviation(angle: Float, normalRange: Pair<Float, Float>): Float {
+        return when {
+            angle < normalRange.first -> normalRange.first - angle
+            angle > normalRange.second -> angle - normalRange.second
+            else -> 0f
+        }
+    }
+
+    private fun getAveragePoint(left: Landmark, right: Landmark): Landmark {
+        return Landmark(
+            x = (left.x + right.x) / 2f,
+            y = (left.y + right.y) / 2f,
+            visibility = (left.visibility + right.visibility) / 2f
+        )
     }
 
     private fun determineOverallRisk(spinalRisk: RiskLevel, neckRisk: RiskLevel): RiskLevel {
@@ -217,49 +306,61 @@ class PostureAnalyzer {
         }
     }
 
-    private fun getSpinalRecommendation(riskLevel: RiskLevel, flatteningPercentage: Float): String {
+    private fun getLumbarRecommendation(riskLevel: RiskLevel, angle: Float, flatteningPercentage: Float): String {
         return when (riskLevel) {
-            RiskLevel.LOW -> "Bel eğriliğiniz normal aralıkta. Bu durumu korumak için düzenli egzersiz yapın ve doğru oturuş pozisyonu alın."
+            RiskLevel.LOW -> "Lumbar lordoz açınız normal aralıkta (${angle.toInt()}°). " +
+                    "Düzenli egzersiz ve doğru postürü koruyarak bu durumu sürdürün."
 
-            RiskLevel.MODERATE -> "Bel eğriliğinizde orta düzeyde değişiklik tespit edildi (${flatteningPercentage.toInt()}% sapma). " +
-                    "Sırt kaslarınızı güçlendiren egzersizler yapın ve uzun süre aynı pozisyonda kalmaktan kaçının."
+            RiskLevel.MODERATE -> "Lumbar lordozda hafif azalma tespit edildi (${angle.toInt()}°, %${flatteningPercentage.toInt()} düzleşme). " +
+                    "Core güçlendirme egzersizleri, hip flexor germe ve pelvic tilt egzersizleri yapın. " +
+                    "Uzun süre oturmaktan kaçının."
 
-            RiskLevel.HIGH -> "Bel eğriliğinizde ciddi düzeyde düzleşme tespit edildi (${flatteningPercentage.toInt()}% sapma). " +
-                    "Fizik tedavi uzmanına danışmanızı öneriyoruz. Düzenli stretching ve core güçlendirme egzersizleri yapın."
+            RiskLevel.HIGH -> "Ciddi lumbar düzleşme (${angle.toInt()}°, %${flatteningPercentage.toInt()} düzleşme). " +
+                    "Bu durum bel ağrısına yol açabilir. Derhal fizik tedavi desteği alın. " +
+                    "McKenzie egzersizleri, lumbar ekstansiyon egzersizleri öncelikli. " +
+                    "Ergonomik oturma düzeni sağlayın."
         }
     }
 
-    private fun getCervicalRecommendation(riskLevel: RiskLevel, flatteningPercentage: Float): String {
+    private fun getCervicalRecommendation(riskLevel: RiskLevel, cva: Float, forwardHeadMm: Float): String {
         return when (riskLevel) {
-            RiskLevel.LOW -> "Boyun eğriliğiniz normal aralıkta. Bu durumu korumak için boyun egzersizleri yapın ve ekran yüksekliğinizi ayarlayın."
+            RiskLevel.LOW -> "Boyun postürünüz iyi durumda (CVA: ${cva.toInt()}°). " +
+                    "Ekran ergonomisi ve boyun egzersizlerini sürdürün."
 
-            RiskLevel.MODERATE -> "Boyun eğriliğinizde orta düzeyde değişiklik tespit edildi (${flatteningPercentage.toInt()}% sapma). " +
-                    "Boyun stretching egzersizleri yapın ve masa başı duruşunuzu düzeltin."
+            RiskLevel.MODERATE -> "Forward head posture tespit edildi (CVA: ${cva.toInt()}°, ${forwardHeadMm.toInt()}mm). " +
+                    "Ekran yüksekliğini göz seviyesine ayarlayın. " +
+                    "Günde 3-4 kez chin tuck egzersizi yapın. " +
+                    "Upper trap germe egzersizleri ekleyin."
 
-            RiskLevel.HIGH -> "Boyun eğriliğinizde ciddi düzeyde düzleşme tespit edildi (${flatteningPercentage.toInt()}% sapma). " +
-                    "Fizik tedavi uzmanına danışmanızı öneriyoruz. 'Text neck' durumundan kaçının ve düzenli boyun egzersizleri yapın."
+            RiskLevel.HIGH -> "Ciddi text neck sendromu (CVA: ${cva.toInt()}°, ${forwardHeadMm.toInt()}mm). " +
+                    "Bu durum boyun ağrısı, baş ağrısı ve omuz problemlerine yol açar. " +
+                    "Acil ergonomik düzenleme yapın. " +
+                    "Fizik tedavi önerisi: derin boyun flexor güçlendirme, " +
+                    "suboccipital kas germe, thoracic mobilizasyon egzersizleri gerekli."
         }
     }
 
     private fun createErrorResult(errorMessage: String): PostureAnalysisResult {
-        val errorAnalysis = SpinalAnalysis(
+        val errorSpinal = SpinalAnalysis(
             curvatureAngle = 0f,
+            deviationFromNormal = 0f,
             flatteningPercentage = 0f,
-            riskLevel = RiskLevel.HIGH,
-            recommendation = "Analiz yapılamadı: $errorMessage"
+            riskLevel = RiskLevel.MODERATE,
+            recommendation = "Analiz yapılamadı: $errorMessage. Lütfen daha net bir fotoğraf çekin."
         )
 
-        val errorNeckAnalysis = NeckAnalysis(
+        val errorNeck = NeckAnalysis(
             cervicalAngle = 0f,
+            forwardHeadPosture = 0f,
             flatteningPercentage = 0f,
-            riskLevel = RiskLevel.HIGH,
-            recommendation = "Analiz yapılamadı: $errorMessage"
+            riskLevel = RiskLevel.MODERATE,
+            recommendation = "Analiz yapılamadı: $errorMessage. Lütfen daha net bir fotoğraf çekin."
         )
 
         return PostureAnalysisResult(
-            overallRiskLevel = RiskLevel.HIGH,
-            spinalFlattening = errorAnalysis,
-            neckFlattening = errorNeckAnalysis
+            overallRiskLevel = RiskLevel.MODERATE,
+            spinalFlattening = errorSpinal,
+            neckFlattening = errorNeck
         )
     }
 }

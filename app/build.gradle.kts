@@ -5,6 +5,7 @@ plugins {
 
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -104,5 +105,13 @@ dependencies {
     implementation("androidx.camera:camera-view:1.3.1")
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.7.3")
+
+
+    // Room Data Base için kullanılan kütüphaneler.
+    val roomVersion = "2.6.1"
+    ksp("androidx.room:room-compiler:$roomVersion")
+    implementation("androidx.room:room-runtime:$roomVersion")
+    implementation("androidx.room:room-ktx:$roomVersion")
+    implementation("com.google.code.gson:gson:2.12.1")
 
 }

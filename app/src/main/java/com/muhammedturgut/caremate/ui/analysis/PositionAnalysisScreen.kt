@@ -5,7 +5,9 @@ package com.muhammedturgut.caremate.ui.analysis
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -22,11 +24,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.muhammedturgut.caremate.pose.RiskLevel
+import com.muhammedturgut.caremate.ui.theme.PoppinRegular
+import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 
 @Composable
 fun PositionAnalysisScreen(
@@ -36,37 +42,42 @@ fun PositionAnalysisScreen(
     val uiState by analysisViewModel.uiState.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF8F8F8))
     ) {
         // Üst bar
-        TopAppBar(
-            title = {
-                Text(
-                    text = "Postür Analizi Sonuçları",
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            navigationIcon = {
-                IconButton(
-                    onClick = {
+
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp , vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center){
+
+            Icon(Icons.Default.ArrowBack, contentDescription = "Geri",
+                tint = Color.Black,
+                modifier = Modifier
+                    .size(24.dp)
+                    .clickable(onClick = {
                         navControllerAppHost.navigate("NavBarHostScreen") {
                             popUpTo(navControllerAppHost.graph.id) { inclusive = true }
                         }
-                    }
-                ) {
-                    Image(Icons.Default.ArrowBack, contentDescription = "Geri")
-                }
-            },
-            actions = {
-                IconButton(
-                    onClick = {
-                        navControllerAppHost.navigate("PostureCameraScreen")
-                    }
-                ) {
-                    Image(painter = painterResource(R.drawable.change_camera), contentDescription = null)
-                }
-            }
-        )
+                }))
+
+            Text(
+                text = "Postür Analizi Sonuçları",
+                fontFamily = PoppinSemiBold,
+                fontSize = 20.sp,
+                color = Color(0xFF70A056),
+                modifier = Modifier
+                    .padding(start = 8.dp)
+                    .weight(1f)
+            )
+
+            Icon(painter = painterResource(R.drawable.cancel_icon), contentDescription = null,
+                tint = Color.Black,
+                modifier = Modifier.size(24.dp))
+
+        }
+
 
         when {
             uiState.analysisResult != null -> {
@@ -141,7 +152,11 @@ fun PositionAnalysisScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp)
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Transparent, // Kartın arka plan rengi
+                            contentColor = Color.Transparent        // İçerikteki metin/icon rengi
+                        )
                     ) {
                         Column(
                             modifier = Modifier.padding(24.dp),
@@ -149,25 +164,32 @@ fun PositionAnalysisScreen(
                         ) {
                             Text(
                                 text = "Henüz analiz yapılmamış",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
+                                fontFamily = PoppinSemiBold,
+                                fontSize = 20.sp,
+                                color = Color.Black,
                                 textAlign = TextAlign.Center
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Postür analiziniz için kamera ile fotoğraf çekin",
                                 textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                fontFamily = PoppinRegular,
+                                fontSize = 14.sp,
+                                color = Color(0xFF6D6C6C)
                             )
                             Spacer(modifier = Modifier.height(24.dp))
                             Button(
                                 onClick = {
                                     navControllerAppHost.navigate("PostureCameraScreen")
                                 },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                        colors = ButtonDefaults.buttonColors(
+                                        containerColor = Color(0xFF70A056), // Arka plan rengi
+                                contentColor = Color.White,         // Metin/ikon rengi
+                                disabledContainerColor = Color.Gray, // Buton devre dışı iken arka plan
+                                disabledContentColor = Color.DarkGray // Buton devre dışı iken metin
+                            )
                             ) {
-                                Image(painter = painterResource(R.drawable.change_camera), contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
                                 Text("Analiz Başlat")
                             }
                         }
@@ -371,4 +393,12 @@ private fun NeckAnalysisCard(neckAnalysis: com.muhammedturgut.caremate.pose.Neck
             )
         }
     }
+}
+
+@Preview( showBackground = true)
+@Composable
+private fun Show(){
+    val navControllerAppHost  = rememberNavController()
+
+    PositionAnalysisScreen(navControllerAppHost = navControllerAppHost)
 }

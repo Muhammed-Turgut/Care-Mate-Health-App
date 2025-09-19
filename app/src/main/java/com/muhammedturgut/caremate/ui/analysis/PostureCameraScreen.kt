@@ -1,13 +1,14 @@
-package com.muhammedturgut.caremate.ui.camera
+package com.muhammedturgut.caremate.ui.analysis
 
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
+import android.graphics.Matrix
+import android.graphics.Rect
 import android.graphics.YuvImage
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
-import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,21 +18,23 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.ImageProxy
 import androidx.camera.view.CameraController
 import androidx.camera.view.LifecycleCameraController
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -41,7 +44,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
-import com.muhammedturgut.caremate.ui.analysis.AnalysisViewModel
+import com.muhammedturgut.caremate.ui.camera.CameraPermissionViewModel
+import com.muhammedturgut.caremate.ui.camera.CameraPreview
+import com.muhammedturgut.caremate.ui.theme.PoppinBold
+import com.muhammedturgut.caremate.ui.theme.PoppinRegular
+import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -82,7 +89,7 @@ fun PostureCameraScreen(
     // İzin kontrolü
     LaunchedEffect(permissionState, permissionRequested) {
         if (!permissionRequested) {
-            launcher.launch(CameraPermissionViewModel.CAMERAX_PERMISSONS)
+            launcher.launch(CameraPermissionViewModel.Companion.CAMERAX_PERMISSONS)
         }
     }
 
@@ -106,7 +113,7 @@ fun PostureCameraScreen(
                     .fillMaxSize()
                     .padding(paddingValues)
             ) {
-                val (changeButton, cancelButton, cameraPreview, bottomRow, instructionCard, statusCard) = createRefs()
+                val (changeButton, cancelButton, cameraPreview, about, bottomRow, instructionCard, statusCard) = createRefs()
 
                 // Kamera önizleme
                 CameraPreview(
@@ -140,6 +147,25 @@ fun PostureCameraScreen(
                     Image(
                         painter = painterResource(R.drawable.change_camera),
                         contentDescription = "Kamera Değiştir"
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+
+                        showInstructions = true
+
+                    },
+                    modifier = Modifier
+                        .size(if (isTablet) 82.dp else 42.dp)
+                        .constrainAs(about) {
+                            start.linkTo(changeButton.end, margin = 8.dp)
+                            top.linkTo(parent.top, margin = 24.dp)
+                        }
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.about_icon),
+                        contentDescription = "about"
                     )
                 }
 
@@ -234,55 +260,181 @@ fun PostureCameraScreen(
 
                 // Talimat kartı
                 if (showInstructions) {
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp)
-                            .constrainAs(instructionCard) {
-                                start.linkTo(parent.start)
-                                end.linkTo(parent.end)
-                                top.linkTo(changeButton.bottom, margin = 16.dp)
-                            },
+                        .constrainAs(instructionCard) {
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            top.linkTo(changeButton.bottom, margin = 16.dp)
+                        },
                         colors = CardDefaults.cardColors(
                             containerColor = Color.Black.copy(alpha = 0.7f)
                         )
                     ) {
+
                         Column(
                             modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = "Postür Analizi Talimatları",
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                )
-                                TextButton(
-                                    onClick = { showInstructions = false }
-                                ) {
-                                    Text("✕", color = Color.White)
-                                }
+                            Row(modifier = Modifier.padding(horizontal = 12.dp).fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.End){
+
+                                Image(painter = painterResource(R.drawable.cancel_icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp).clickable(onClick = {
+                                        showInstructions = false
+                                    }))
                             }
 
-                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
 
-                            Text(
-                                text = """
-                                    📸 Yan profilden durun
-                                    👤 Tam vücut görünür olsun
-                                    📏 Doğal postürünüzü koruyun
-                                    💡 İyi ışıklandırma altında olun
-                                    📐 Kamera göz hizasında olsun
-                                """.trimIndent(),
-                                color = Color.White,
-                                fontSize = 14.sp,
-                                textAlign = TextAlign.Start
-                            )
+
+                                Text(
+                                    text = "En İyi Sonuç için Fotoğraf Çekme\n" +
+                                            " Kılavuzu",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.Top,
+                                horizontalArrangement = Arrangement.SpaceBetween){
+
+                                Image(painter = painterResource(R.drawable.posture_position_image),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(50.dp,158.dp))
+
+                                Spacer(modifier = Modifier.width(18.dp))
+
+                                Column(modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Top){
+                                    Text(text = "Pozisyon ve Açı",
+                                        fontFamily = PoppinBold,
+                                        fontSize = 14.sp,
+                                        color = Color.White
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text = "Yan profil (90°): Kullanıcı kameraya tam \n" +
+                                            "yan durmalı.",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text =  "Doğal duruş: Kasıtlı düzeltme yapmadan günlük \n" +
+                                            "postürde.",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                }
+
+                            }
+
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween){
+
+                                Column(horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Top){
+
+                                    Text(text = "Kamera yüksekliği: Kullanıcının göğüs hizasında.",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                    Spacer(modifier = Modifier.height(8.dp))
+
+                                    Text(text = "2-3 metre uzaklık (tüm\n" +
+                                            "vücut görünmeli)",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 16.sp)
+
+                                }
+                                Spacer(modifier = Modifier.width(18.dp))
+
+                                Image(painter = painterResource(R.drawable.posture_position_imagee),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(82.dp,132.dp))
+
+
+
+                            }
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween){
+
+
+                                Image(painter = painterResource(R.drawable.posture_position_imageee),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(82.dp,132.dp))
+
+                                Spacer(modifier = Modifier.width(18.dp))
+
+                                Column(horizontalAlignment = Alignment.Start,
+                                    verticalArrangement = Arrangement.Top){
+
+                                    Text(text = "Kıyafet ve Görünürlük",
+                                        fontFamily = PoppinBold,
+                                        fontSize = 14.sp,
+                                        color = Color.White
+                                    )
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text = "Dar kıyafet: Vücut hatlarını gösteren",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text =  "Kapüşon/şapka yok: Kulak ve boyun çizgisi net \n" +
+                                            "görünmeli",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text =  "Düz taban ayakkabı: Yalın ayak veya spor ayakkabı",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                    Spacer(modifier = Modifier.height(4.dp))
+
+                                    Text(text =  "Saç toplu: Boyun ve kulak landmarks'ı için",
+                                        textAlign = TextAlign.Start,
+                                        color = Color.White,
+                                        fontSize = 10.sp)
+
+                                }
+
+                            }
+
                         }
                     }
                 }
@@ -351,7 +503,7 @@ fun PostureCameraScreen(
                                     .size(if (isTablet) 98.dp else 58.dp)
                                     .background(
                                         Color.Black.copy(alpha = 0.5f),
-                                        shape = androidx.compose.foundation.shape.CircleShape
+                                        shape = CircleShape
                                     ),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -399,7 +551,7 @@ fun PostureCameraScreen(
                         .padding(16.dp)
                         .align(Alignment.BottomCenter),
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
+                        containerColor = Color.White
                     )
                 ) {
                     Column(
@@ -408,13 +560,16 @@ fun PostureCameraScreen(
                     ) {
                         Text(
                             text = if (!analysisState.isDetectorInitialized) "Başlatma Hatası" else "Analiz Hatası",
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onErrorContainer
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 20.sp,
+                            color = Color.Black
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = errorMessage,
-                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            color = Color(0xFF6A6A6A),
+                            fontFamily = PoppinRegular,
+                            fontSize = 14.sp,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(16.dp))
@@ -429,7 +584,10 @@ fun PostureCameraScreen(
                                 }
                             }
                             OutlinedButton(
-                                onClick = { analysisViewModel.clearError() }
+                                onClick = { analysisViewModel.clearError() },
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color(0xFF70A056)      // Yazı ve ikon rengi
+                                ),
                             ) {
                                 Text("Tamam")
                             }
@@ -531,7 +689,7 @@ private fun takePhotoForPostureAnalysis(
 
                     // Görüntü döndürme işlemleri
                     val rotation = controller.cameraInfo?.sensorRotationDegrees?.toFloat() ?: 0f
-                    val matrix = android.graphics.Matrix()
+                    val matrix = Matrix()
 
                     if (controller.cameraSelector == CameraSelector.DEFAULT_FRONT_CAMERA) {
                         // Ön kamera için yansıtma
@@ -594,7 +752,7 @@ fun ImageProxy.toBitmap(): Bitmap {
 
     val yuvImage = YuvImage(nv21, ImageFormat.NV21, width, height, null)
     val out = ByteArrayOutputStream()
-    yuvImage.compressToJpeg(android.graphics.Rect(0, 0, width, height), 100, out)
+    yuvImage.compressToJpeg(Rect(0, 0, width, height), 100, out)
     val imageBytes = out.toByteArray()
     return BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
 }
@@ -617,4 +775,13 @@ fun hasFlashLightDetailed(context: Context): Boolean {
         Log.e("FlashCheck", "Flash kontrol hatası: ${e.message}")
         false
     }
+}
+
+
+
+
+@Preview(showBackground = true)
+@Composable
+private fun Show(){
+
 }

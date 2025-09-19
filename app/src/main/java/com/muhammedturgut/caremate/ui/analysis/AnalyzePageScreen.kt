@@ -392,7 +392,7 @@ private fun AnalyzedDiseasesRow(maxWidth: Dp,
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween){
 
-            Image(painter = painterResource(R.drawable.on_boarding_screen_start_image),
+            Image(painter = painterResource(R.drawable.postur_analiz_image),
                 contentDescription = null,
                 modifier = Modifier
                     .padding(start = 12.dp)
@@ -489,7 +489,13 @@ private fun AnalyzedDiseasesRow(maxWidth: Dp,
 
                 Button(
                     onClick = {
-                        // navControllerAppHost.navigate("NavBarHost")
+
+                        navControllerAppHost.navigate("PostureAnalysisResultScreen"){
+                            popUpTo(navControllerAppHost.graph.id){
+                                inclusive = true
+                            }
+                        }
+
                     },
                     modifier = Modifier
                         .fillMaxWidth()
