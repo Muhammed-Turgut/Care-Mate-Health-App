@@ -10,6 +10,7 @@ import com.muhammedturgut.caremate.ui.aiChat.AIChatPageScreen
 import com.muhammedturgut.caremate.ui.analysis.AnalysisViewModel
 import com.muhammedturgut.caremate.ui.analysis.PositionAnalysisScreen
 import com.muhammedturgut.caremate.ui.analysis.PostureCameraScreen
+import com.muhammedturgut.caremate.ui.diet.DietListScreen
 import com.muhammedturgut.caremate.ui.start.SplashScreen
 import com.muhammedturgut.caremate.ui.start.login.LogInScreen
 import com.muhammedturgut.caremate.ui.start.onboardingScreens.OnBoardingScreenFinish
@@ -90,6 +91,13 @@ fun AppNavHost( maxWidth: Dp,
                 maxWidth = maxWidth,
                 maxHeight = maxHeight,
                 isTablet = isTablet,
+            )
+        }
+
+        composable("DietListScreen"){
+            DietListScreen( // Paylaşılan ViewModel
+                navControllerAppHost = navControllerAppHost,
+
             )
         }
 

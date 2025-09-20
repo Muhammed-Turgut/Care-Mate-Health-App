@@ -4,6 +4,7 @@ import androidx.room.Database
 import androidx.room.RoomDatabase
 import com.muhammedturgut.caremate.data.local.entity.ChatData
 import com.muhammedturgut.caremate.data.local.entity.DailyUserData
+import com.muhammedturgut.caremate.data.local.entity.DietItem
 import com.muhammedturgut.caremate.data.local.entity.PostureAnalysis
 
 
@@ -11,7 +12,8 @@ import com.muhammedturgut.caremate.data.local.entity.PostureAnalysis
     entities = [
           DailyUserData::class,
           ChatData::class,
-          PostureAnalysis::class],
+          PostureAnalysis::class,
+          DietItem::class],
     version = 1,
     exportSchema = false
 )

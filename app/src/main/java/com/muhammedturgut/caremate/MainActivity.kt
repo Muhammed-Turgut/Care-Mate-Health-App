@@ -1,6 +1,7 @@
 package com.muhammedturgut.caremate
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,33 +21,43 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Scaffold {paddingValues->
-                Box(modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFF8F8F8))
-                    .padding(paddingValues)){
+        try {
+            super.onCreate(savedInstanceState)
+            enableEdgeToEdge()
+            setContent {
+                Scaffold {paddingValues->
+                    Box(modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0xFFF8F8F8))
+                        .padding(paddingValues)){
 
-                    //Google gamini ai = AIzaSyABnWyx8V4HkqOYnXaG3xyG-cDDQhgsy70 api key
+                        //Google gamini ai = AIzaSyABnWyx8V4HkqOYnXaG3xyG-cDDQhgsy70 api key
 
-                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
 
-                        val maxWidth = maxWidth
-                        val maxHeight =maxHeight
-                        val isTablet = maxWidth>600.dp
 
-                        AppNavHost(
-                            maxWidth =maxWidth,
-                            maxHeight=maxHeight,
-                            isTablet=isTablet)
+                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+
+                            val maxWidth = maxWidth
+                            val maxHeight =maxHeight
+                            val isTablet = maxWidth>600.dp
+
+                            AppNavHost(
+                                maxWidth =maxWidth,
+                                maxHeight=maxHeight,
+                                isTablet=isTablet)
+
+                        }
+
+
 
                     }
                 }
-            }
 
+            }
+        }catch (e: Exception){
+            Log.d("MainActivity",e.message.toString())
         }
+
     }
 }
 

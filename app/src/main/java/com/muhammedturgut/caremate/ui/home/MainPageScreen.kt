@@ -833,6 +833,63 @@ val diseasesList = listOf<DiseasesItem>(
 )
 
 
+@Composable
+fun CustomDailyDataButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
+    maxWidth: Dp
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled && !isLoading,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (enabled) Color(0xFF70A056) else Color(0xFFB0B0B0),
+            contentColor = Color.White,
+            disabledContainerColor = Color(0xFFE0E0E0),
+            disabledContentColor = Color(0xFF9E9E9E)
+        ),
+        shape = RoundedCornerShape(min(maxWidth * 0.03f, 12.dp)),
+        elevation = ButtonDefaults.buttonElevation(
+            defaultElevation = if (enabled) 4.dp else 0.dp,
+            pressedElevation = 2.dp,
+            disabledElevation = 0.dp
+        ),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(52.dp)
+            .padding(horizontal = 24.dp)
+    ) {
+        if (isLoading) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Loading...",
+                    fontFamily = PoppinSemiBold,
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            }
+        } else {
+            Text(
+                text = text,
+                fontFamily = PoppinSemiBold,
+                fontSize = 16.sp,
+                color = Color.White
+            )
+        }
+    }
+}
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Preview(showBackground = true)

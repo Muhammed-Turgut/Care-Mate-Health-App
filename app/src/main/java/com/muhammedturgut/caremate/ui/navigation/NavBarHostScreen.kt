@@ -1,6 +1,8 @@
 package com.muhammedturgut.caremate.ui.navigation
 
+
 import android.app.Activity
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,6 +25,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -32,6 +35,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -43,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.min
@@ -53,7 +58,7 @@ import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
 import com.muhammedturgut.caremate.data.local.room.RoomViewModel
 import com.muhammedturgut.caremate.ui.analysis.AnalyzePageScreen
-import com.muhammedturgut.caremate.ui.diseases.DiseasesPageScreen
+import com.muhammedturgut.caremate.ui.diet.DietPageScreen
 import com.muhammedturgut.caremate.ui.home.MainPageScreen
 import com.muhammedturgut.caremate.ui.profile.ProfilePageScreen
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
@@ -71,6 +76,7 @@ fun NavBarHostScreen(
     val context = LocalContext.current
     val activity = context as? Activity
 
+
     BackHandler {
 
 
@@ -79,7 +85,7 @@ fun NavBarHostScreen(
     var show by remember { mutableStateOf(true) }
 
     if (show) {
-        addDailyData(
+       addDailyData(
             maxWidth, maxHeight, isTablet, roomViewModel = roomViewModel,
             show = {
                 show = it
@@ -101,7 +107,7 @@ fun NavBarHostScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding) // 👈 Scaffold'un sağladığı boşluk
+                .padding(innerPadding)
         ) {
 
 
@@ -119,7 +125,9 @@ fun NavBarHostScreen(
                         navControllerAppHost = navControllerAppHost
                     )
 
-                    "calori" -> DiseasesPageScreen()
+                    "calori" -> DietPageScreen(maxWidth,
+                        navControllerAppHost = navControllerAppHost)
+
 
                     "analysis" -> AnalyzePageScreen(
                         maxWidth = maxWidth,
@@ -236,6 +244,8 @@ private fun BottomBarItem(
         var textHowYou by remember { mutableStateOf("")}
         var selectedSleepIndex by remember { mutableStateOf(-1) }
 
+        val dailyUserData by roomViewModel.dailyUserData.collectAsState()
+
         // Tüm alanların dolu olup olmadığını kontrol et
         val allFieldsFilled = textWater.isNotBlank() &&
                 textStep.isNotBlank() &&
@@ -321,9 +331,15 @@ private fun BottomBarItem(
 
                             OutlinedTextField(
                                 value = textWater,
-                                onValueChange = { textWater = it },
+                                onValueChange = { input ->
+                                    // sadece 0-9 karakterlerini kabul et
+                                    if (input.all { it.isDigit() }) {
+                                        textWater = input
+                                    }
+                                },
                                 placeholder = { Text("the amount of water you drink", color = Color(0xFF666666)) },
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(min(maxWidth * 0.03f, 8.dp)),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = Color.Black,
@@ -456,9 +472,15 @@ private fun BottomBarItem(
 
                             OutlinedTextField(
                                 value = textStep,
-                                onValueChange = { textStep = it },
+                                onValueChange = { input ->
+                                    // sadece 0-9 karakterlerini kabul et
+                                    if (input.all { it.isDigit() }) {
+                                        textStep = input
+                                    }
+                                },
                                 placeholder = { Text("Number of steps or exercise duration", color = Color(0xFF666666)) },
                                 singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 shape = RoundedCornerShape(min(maxWidth * 0.03f, 8.dp)),
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedTextColor = Color.Black,
@@ -537,7 +559,21 @@ private fun BottomBarItem(
                             } else "0"
 
 
-                            roomViewModel.insertDailyUserData(textWater,textStep,textHowYou,sleepValue)
+                            if (dailyUserData == null) {
+
+                                roomViewModel.insertDailyUserData(textWater, textStep, textHowYou, sleepValue,id = 1)
+                                show(false)
+
+                            } else {
+
+                                roomViewModel.updateDailyUserData(textWater, textStep, textHowYou, sleepValue,id = 1)
+                                show(false)
+
+                            }
+
+                            // İşlem tamamlandıktan sonra modal'ı kapat
+
+
 
                         },
                         maxWidth = maxWidth,
@@ -554,7 +590,7 @@ private fun BottomBarItem(
     }
 
     @Composable
-    fun CustomDailyDataButton(
+   private fun CustomDailyDataButton(
         text: String,
         onClick: () -> Unit,
         modifier: Modifier = Modifier,

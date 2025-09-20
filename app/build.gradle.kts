@@ -114,4 +114,8 @@ dependencies {
     implementation("androidx.room:room-ktx:$roomVersion")
     implementation("com.google.code.gson:gson:2.12.1")
 
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")     // HTTP istekleri
+    implementation("com.squareup.moshi:moshi:1.15.0")         // JSON parse
+    implementation("com.squareup.moshi:moshi-kotlin:1.15.0")
+
 }

@@ -33,6 +33,7 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,8 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.min
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.data.local.entity.DailyUserData
+import com.muhammedturgut.caremate.data.local.room.RoomViewModel
 import com.muhammedturgut.caremate.ui.start.login.LogInScreen
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
@@ -72,7 +76,8 @@ import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 fun AnalyzePageScreen(maxWidth: Dp,
                       maxHeight: Dp,
                       isTablet:Boolean,
-                      navControllerAppHost: NavController
+                      navControllerAppHost: NavController,
+                      roomViewModel: RoomViewModel = hiltViewModel()
 
 ){
     Box(modifier = Modifier
@@ -80,6 +85,7 @@ fun AnalyzePageScreen(maxWidth: Dp,
         .background(Color(0xFFFAFAFA))) {
 
         val scrollState = rememberScrollState()
+        val dailyUserData by roomViewModel.dailyUserData.collectAsState()
 
         Column(
             modifier = Modifier
@@ -97,7 +103,16 @@ fun AnalyzePageScreen(maxWidth: Dp,
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            HealthAnalysis()
+
+            dailyUserData?.let { daliy ->
+
+                HealthAnalysis(dailyUserData = daliy)
+
+            }
+
+
+
+
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -115,7 +130,7 @@ fun AnalyzePageScreen(maxWidth: Dp,
 }
 
 @Composable
-private fun HealthAnalysis(){
+private fun HealthAnalysis(dailyUserData: DailyUserData){
 
     Box(modifier = Modifier
         .fillMaxWidth()
@@ -139,7 +154,7 @@ private fun HealthAnalysis(){
 
             MobileSemiCircleProgressBar(45.5f)
             Spacer(modifier = Modifier.height(24.dp))
-            AnalysisResults()
+            AnalysisResults(dailyUserData)
 
         }
 
@@ -148,7 +163,7 @@ private fun HealthAnalysis(){
 }
 
 @Composable
-fun MobileSemiCircleProgressBar(
+private fun MobileSemiCircleProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
     strokeWidth: Dp = 16.dp,
@@ -229,7 +244,7 @@ fun MobileSemiCircleProgressBar(
 }
 
 @Composable
-private fun AnalysisResults(){
+private fun AnalysisResults(dailyUserData: DailyUserData){
     Row (modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween){
@@ -250,7 +265,7 @@ private fun AnalysisResults(){
                     lineHeight = 12.sp,
                     fontSize = 12.sp)
 
-                Text(text = "67"+"/100",
+                Text(text = ""+"/100",
                     fontFamily = PoppinBold,
                     color = Color.Black,
                     lineHeight = 12.sp,
@@ -275,7 +290,7 @@ private fun AnalysisResults(){
                     lineHeight = 12.sp,
                     fontSize = 12.sp)
 
-                Text(text = "12 Hour",
+                Text(text = "${dailyUserData.todaySleepDuration}"+" Hour",
                     fontFamily = PoppinBold,
                     color = Color.Black,
                     lineHeight = 12.sp,
@@ -294,13 +309,13 @@ private fun AnalysisResults(){
             Spacer(modifier = Modifier.width(4.dp))
 
             Column {
-                Text(text = "distance",
+                Text(text = "Step",
                     fontFamily = PoppinSemiBold,
                     color = Color(0xFFC8C8C8),
                     lineHeight = 12.sp,
                     fontSize = 12.sp)
 
-                Text(text = "1200 M",
+                Text(text = "${dailyUserData.numberOfStepsTakenDaily}",
                     fontFamily = PoppinBold,
                     color = Color.Black,
                     lineHeight = 12.sp,

@@ -6,6 +6,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "daily_user_data")
 data class DailyUserData(
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
 
     @ColumnInfo(name = "amount_of_water_consumed_daily")
     val amountOfWaterConsumedDaily: String,
@@ -20,6 +22,5 @@ data class DailyUserData(
     val todaySleepDuration: String,
 
 ) {
-    @PrimaryKey(autoGenerate = true)
-    var id: Int = 0
+
 }

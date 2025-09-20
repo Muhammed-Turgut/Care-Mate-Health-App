@@ -3,6 +3,7 @@ package com.muhammedturgut.caremate.ui.profile
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,15 +29,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.data.remote.GeminiAiViewModel
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
 import com.muhammedturgut.caremate.ui.theme.PoppinMedium
 import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
+import androidx.compose.runtime.getValue
 
 
 @Composable
-fun ProfilePageScreen(){
+fun ProfilePageScreen(geminiAiViewModel : GeminiAiViewModel = hiltViewModel()){
+
+
+
     Box(modifier = Modifier
         .fillMaxSize()
         .background(Color(0xFFFAFAFA))) {
@@ -64,8 +72,7 @@ fun ProfilePageScreen(){
 
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFCBCBCB), CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF3A90CE)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween){
@@ -74,13 +81,16 @@ fun ProfilePageScreen(){
                     Image(painter = painterResource(R.drawable.edit_profile_icon),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
-                            .size(32.dp))
+                            .padding(start = 12.dp, top = 16.dp, bottom = 16.dp)
+                            .size(32.dp)
+                            .clickable(onClick = {
+
+                            }))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(text = "Edit profile name",
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontFamily = PoppinMedium,
                         color = Color.White,
                         modifier = Modifier.weight(1f)
@@ -94,12 +104,11 @@ fun ProfilePageScreen(){
 
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFCBCBCB), CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF3A90CE)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween){
@@ -108,13 +117,13 @@ fun ProfilePageScreen(){
                     Image(painter = painterResource(R.drawable.drugs_profile_icon),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+                            .padding(start = 12.dp, top = 16.dp, bottom = 16.dp)
                             .size(32.dp))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(text = "Drugs",
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontFamily = PoppinMedium,
                         color = Color.White,
                         modifier = Modifier.weight(1f)
@@ -128,12 +137,11 @@ fun ProfilePageScreen(){
 
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFCBCBCB), CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF3A90CE)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween){
@@ -142,13 +150,13 @@ fun ProfilePageScreen(){
                     Image(painter = painterResource(R.drawable.password_profile_icon),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+                            .padding(start = 12.dp, top = 16.dp, bottom = 16.dp)
                             .size(32.dp))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(text = "Change password",
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontFamily = PoppinMedium,
                         color = Color.White,
                         modifier = Modifier.weight(1f)
@@ -162,12 +170,11 @@ fun ProfilePageScreen(){
 
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFCBCBCB), CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF3A90CE)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween){
@@ -176,13 +183,13 @@ fun ProfilePageScreen(){
                     Image(painter = painterResource(R.drawable.feedback_profile_icon),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+                            .padding(start = 12.dp, top = 16.dp, bottom = 16.dp)
                             .size(32.dp))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(text = "Feedback",
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontFamily = PoppinMedium,
                         color = Color.White,
                         modifier = Modifier.weight(1f)
@@ -195,12 +202,11 @@ fun ProfilePageScreen(){
                             .size(20.dp))
 
                 }
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Row(modifier = Modifier
                     .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFCBCBCB), CircleShape)
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Color(0xFF3A90CE)),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween){
@@ -209,13 +215,13 @@ fun ProfilePageScreen(){
                     Image(painter = painterResource(R.drawable.sign_out_profile_iconsvg),
                         contentDescription = null,
                         modifier = Modifier
-                            .padding(start = 12.dp, top = 8.dp, bottom = 8.dp)
+                            .padding(start = 12.dp, top = 16.dp, bottom = 16.dp)
                             .size(32.dp))
 
                     Spacer(modifier = Modifier.width(8.dp))
 
                     Text(text = "Log out",
-                        fontSize = 20.sp,
+                        fontSize = 16.sp,
                         fontFamily = PoppinMedium,
                         color = Color.White,
                         modifier = Modifier.weight(1f)
@@ -228,14 +234,8 @@ fun ProfilePageScreen(){
                             .size(20.dp))
 
                 }
-
-
-
             }
-
         }
-
-
     }
 }
 
@@ -363,10 +363,6 @@ private fun ProfileAboutCard(){
     }
 }
 
-@Composable
-private fun ProfileOptions(){
-
-}
 
 @Preview(showBackground = true)
 @Composable

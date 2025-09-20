@@ -3,6 +3,7 @@ package com.muhammedturgut.caremate.data.local.repository
 import com.muhammedturgut.caremate.data.local.dataSource.RoomDataSource
 import com.muhammedturgut.caremate.data.local.entity.ChatData
 import com.muhammedturgut.caremate.data.local.entity.DailyUserData
+import com.muhammedturgut.caremate.data.local.entity.DietItem
 import com.muhammedturgut.caremate.data.local.entity.PostureAnalysis
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
@@ -23,14 +24,15 @@ class RoomRepository @Inject constructor(val roomDataSource: RoomDataSource) {
         roomDataSource.deleteAllChatDataItem()
     }
 
-    suspend fun getDailyUserDataItem() : DailyUserData? {
+     fun getDailyUserDataItem() : Flow <DailyUserData?> {
         return  roomDataSource.getDailyUserDataItem()
     }
 
     suspend fun insertDailyUserData(amountOfWaterConsumedDaily: String,
                                     numberOfStepsTakenDaily: String,
                                     howDoYouFeelToday: String,
-                                    todaySleepDuration: String
+                                    todaySleepDuration: String,
+                                    id:Int
     ){
 
 
@@ -38,21 +40,24 @@ class RoomRepository @Inject constructor(val roomDataSource: RoomDataSource) {
         roomDataSource.insertDailyUserData(amountOfWaterConsumedDaily,
             numberOfStepsTakenDaily,
             howDoYouFeelToday,
-            todaySleepDuration
+            todaySleepDuration,
+            id
             )
     }
 
     suspend fun updateDailyUserData(amountOfWaterConsumedDaily: String,
                                     numberOfStepsTakenDaily: String,
                                     howDoYouFeelToday: String,
-                                    todaySleepDuration: String){
+                                    todaySleepDuration: String,
+                                    id:Int){
 
 
 
         roomDataSource.updateDailyUserData(amountOfWaterConsumedDaily,
             numberOfStepsTakenDaily,
             howDoYouFeelToday,
-            todaySleepDuration)
+            todaySleepDuration,
+            id)
     }
 
     suspend fun getPostureAnalysis(id:Int) : PostureAnalysis?{
@@ -132,6 +137,57 @@ class RoomRepository @Inject constructor(val roomDataSource: RoomDataSource) {
             measuredAngleNeck,
             normalRangeNeck,
             curvatureTextNeck)
+    }
+
+
+    fun getDietList(): Flow<List<DietItem?>> {
+        return roomDataSource.getDietList()
+    }
+
+    suspend fun dietListInsert(
+        day: String,
+        breakfastCalorie: String,
+        breakfastOneFood: String,
+        breakfastTwoFood: String,
+        lunchCalorie: String,
+        lunchOneFood: String,
+        lunchTwoFood: String,
+        eveningMealCalorie: String,
+        eveningMealOneFood: String,
+        eveningMealTwoFood: String
+    ) {
+        roomDataSource.dietListInsert(
+            day, breakfastCalorie, breakfastOneFood, breakfastTwoFood,
+            lunchCalorie, lunchOneFood, lunchTwoFood,
+            eveningMealCalorie, eveningMealOneFood, eveningMealTwoFood
+        )
+    }
+
+    suspend fun dietListUpdate(
+        day: String,
+        breakfastCalorie: String,
+        breakfastOneFood: String,
+        breakfastTwoFood: String,
+        lunchCalorie: String,
+        lunchOneFood: String,
+        lunchTwoFood: String,
+        eveningMealCalorie: String,
+        eveningMealOneFood: String,
+        eveningMealTwoFood: String
+    ) {
+        roomDataSource.dietListUpdate(
+            day, breakfastCalorie, breakfastOneFood, breakfastTwoFood,
+            lunchCalorie, lunchOneFood, lunchTwoFood,
+            eveningMealCalorie, eveningMealOneFood, eveningMealTwoFood
+        )
+    }
+
+    suspend fun deleteAllDietItems(){
+        roomDataSource.deleteAllDietItems()
+    }
+
+    suspend fun getDietItemByDay(day: String): DietItem? {
+        return roomDataSource.getDietItemByDay(day)
     }
 
 }
