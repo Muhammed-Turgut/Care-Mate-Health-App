@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
@@ -57,6 +58,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -103,24 +105,42 @@ fun DietPageScreen(maxWidth: Dp,
             .fillMaxSize()
             .background(Color(0xFFFAFAFA))
     ) {
+        BackHandler {
+
+        }
         val scrollState = rememberScrollState()
         val dietResult by geminiAiViewModel.dietText.collectAsState()
         var showDialog by remember { mutableStateOf(false) }
         val context = LocalContext.current
 
-       val aiResponse by geminiAiViewModel.dietText.collectAsState()
-       val currentDayDiet by roomViewModel.currentDayDiet.collectAsState()
-       val getCurrentMealTimeInformation by dietViewModel.getCurrentMealTimeInformation.collectAsState()
+        val aiResponse by geminiAiViewModel.dietText.collectAsState()
+        val currentDayDiet by roomViewModel.currentDayDiet.collectAsState()
+        val getCurrentMealTimeInformation by dietViewModel.getCurrentMealTimeInformation.collectAsState()
 
-        val dailyDietList = listOf<MealData>(
-            MealData(currentDayDiet!!.breakfastCalorie,currentDayDiet!!.breakfastOneFood, currentDayDiet!!.breakfastTwoFood),
-            MealData(currentDayDiet!!.lunchCalorie,currentDayDiet!!.lunchOneFood, currentDayDiet!!.lunchTwoFood),
-            MealData(currentDayDiet!!.eveningMealCalorie,currentDayDiet!!.eveningMealOneFood, currentDayDiet!!.eveningMealTwoFood))
+        // dailyDietList'i derived state olarak tanımlayın
+        val dailyDietList by remember(currentDayDiet) {
+            derivedStateOf {
+                if (currentDayDiet != null) {
+                    listOf(
+                        MealData(currentDayDiet!!.breakfastCalorie, currentDayDiet!!.breakfastOneFood, currentDayDiet!!.breakfastTwoFood),
+                        MealData(currentDayDiet!!.lunchCalorie, currentDayDiet!!.lunchOneFood, currentDayDiet!!.lunchTwoFood),
+                        MealData(currentDayDiet!!.eveningMealCalorie, currentDayDiet!!.eveningMealOneFood, currentDayDiet!!.eveningMealTwoFood)
+                    )
+                } else {
+                    listOf(
+                        MealData("0", "", ""),
+                        MealData("0", "", ""),
+                        MealData("0", "", "")
+                    )
+                }
+            }
+        }
 
-        val totalCalorie by remember {
-            mutableStateOf(
+        // totalCalorie'yi derived state olarak hesaplayın
+        val totalCalorie by remember(dailyDietList) {
+            derivedStateOf {
                 dailyDietList.sumOf { it.calorie.toIntOrNull() ?: 0 }
-            )
+            }
         }
 
         val currentMealTime by dietViewModel.getCurrentMealTimeInformation.collectAsState()
@@ -148,10 +168,6 @@ fun DietPageScreen(maxWidth: Dp,
             else -> 0
         }
 
-
-
-
-
         LaunchedEffect(aiResponse) {
             if (aiResponse.isNotEmpty() && aiResponse != "Henüz diyet oluşturulmadı") {
                 parseDietPlanAndSave(aiResponse, roomViewModel)
@@ -171,431 +187,418 @@ fun DietPageScreen(maxWidth: Dp,
                 roomViewModel = roomViewModel,
                 context = context
             )
-        }
-        else{
-
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .verticalScroll(scrollState)
-                .fillMaxSize()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(CircleShape)
-                    .border(1.dp, Color(0xFFE7E4E4), CircleShape)
-                    .background(Color.White),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Calorie tracking",
-                    fontFamily = PoppinBold,
-                    fontSize = 20.sp,
-                    color = Color(0xFF70A056),
-                    modifier = Modifier
-                        .fillMaxWidth(0.7f) // weight yerine fillMaxWidth
-                        .padding(top = 12.dp, bottom = 12.dp, start = 16.dp)
-                )
-
-                Image(
-                    painter = painterResource(R.drawable.food_add_icon),
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp)
-                )
-
-                Text(
-                    text = "Add Food",
-                    fontFamily = PoppinMedium,
-                    fontSize = 12.sp,
-                    color = Color(0xFF70A056),
-                    modifier = Modifier.padding(end = 16.dp)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
+        } else {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(16.dp))
-                    .background(Color.White),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .padding(16.dp)
+                    .verticalScroll(scrollState)
+                    .fillMaxSize()
             ) {
-                Spacer(modifier = Modifier.height(16.dp))
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                        .clip(CircleShape)
+                        .border(1.dp, Color(0xFFE7E4E4), CircleShape)
+                        .background(Color.White),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "",
-                        modifier = Modifier.size(24.dp)
+                        text = "Calorie tracking",
+                        fontFamily = PoppinBold,
+                        fontSize = 20.sp,
+                        color = Color(0xFF70A056),
+                        modifier = Modifier
+                            .fillMaxWidth(0.7f)
+                            .padding(top = 12.dp, bottom = 12.dp, start = 16.dp)
+                    )
+
+                    Image(
+                        painter = painterResource(R.drawable.food_add_icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(26.dp)
                     )
 
                     Text(
-                        text = "Today",
-                        fontFamily = PoppinSemiBold,
-                        color = Color.Black,
-                        fontSize = 24.sp
-                    )
-
-                    Image(
-                        painter = painterResource(R.drawable.view_list_icon),
-                        contentDescription = "View List Icon",
-                        modifier = Modifier.size(24.dp)
-                            .clickable(onClick = {
-                                navControllerAppHost.navigate("DietListScreen"){
-                                    popUpTo(navControllerAppHost.graph.id){
-                                        inclusive = true
-
-                                    }
-                                }
-                            })
+                        text = "Add Food",
+                        fontFamily = PoppinMedium,
+                        fontSize = 12.sp,
+                        color = Color(0xFF70A056),
+                        modifier = Modifier.padding(end = 16.dp)
                     )
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "$getCurrentMealTimeInformation",
-                    fontStyle = FontStyle.Italic,
-                    color = Color.Black,
-                    fontSize = 18.sp
-                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                val currentMeal = foodImage[currentMealIndex]
-                val currentMealImages = listOf(currentMeal.foodImageOne, currentMeal.foodImageTwo)
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    // Sol ok - önceki resim
-                    Image(
-                        painter = painterResource(R.drawable.chevron_left_icon),
-                        contentDescription = "Önceki Resim",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                currentImageIndex = if (currentImageIndex > 0) {
-                                    currentImageIndex - 1
-                                } else {
-                                    currentMealImages.size - 1 // Son resme git
-                                }
-                            }
-                    )
-
-                    Spacer(modifier = Modifier.width(24.dp))
-
-                    // Şu anki resim
-                    Image(
-                        painter = painterResource(currentMealImages[currentImageIndex]),
-                        contentDescription = null,
-                        modifier = Modifier.size(96.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(24.dp))
-
-                    // Sağ ok - sonraki resim
-                    Image(
-                        painter = painterResource(R.drawable.chevron_right_icon),
-                        contentDescription = "Sonraki Resim",
-                        modifier = Modifier
-                            .size(24.dp)
-                            .clickable {
-                                currentImageIndex = if (currentImageIndex < currentMealImages.size - 1) {
-                                    currentImageIndex + 1
-                                } else {
-                                    0 // İlk resme dön
-                                }
-                            }
-                    )
-                }
-
-                // Öğün zamanı değiştiğinde resim indeksini resetle
-                LaunchedEffect(currentMealTime) {
-                    currentImageIndex = 0
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    "${currentDayDiet!!.lunchTwoFood}",
-                    fontSize = 12.sp,
-                    color = Color.Black,
-                    fontStyle = FontStyle.Italic
-                )
-
-                Text(
-                    "${currentDayDiet!!.lunchCalorie} "+"Kcal",
-                    fontSize = 12.sp,
-                    color = Color.Black,
-                    fontFamily = PoppinSemiBold
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Canvas(modifier = Modifier.fillMaxWidth().height(4.dp)) {
-                    val start = Offset(x = size.width * 0.1f, y = size.height * 0.5f)
-                    val end = Offset(x = size.width * 0.9f, y = size.height * 0.5f)
-
-                    drawLine(
-                        color = Color(0xFFC6C6C6),
-                        start = start,
-                        end = end,
-                        strokeWidth = 2.dp.toPx(),
-                        cap = StrokeCap.Round,
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(modifier = Modifier.fillMaxWidth()) {
-                    Image(
-                        painter = painterResource(R.drawable.dieat_food_icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .padding(top = 12.dp, start = 12.dp, bottom = 12.dp)
-                            .size(152.dp, 116.dp)
-                    )
-
-                    Column(
-                        modifier = Modifier.padding(
-                            top = 12.dp,
-                            start = 12.dp,
-                            bottom = 12.dp
-                        )
-                    ) {
-                        Text(
-                            text = "Create a diet list\nwith AI",
-                            fontFamily = PoppinExtraBold,
-                            fontSize = 20.sp,
-                            color = Color(0xFFE67386)
-                        )
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        Text(
-                            text = "Add foods with correct\ncalories using AI.",
-                            fontFamily = PoppinMedium,
-                            fontSize = 14.sp,
-                            color = Color.Black
-                        )
-                    }
-                }
-
-                CustomDailyDataButton(
-                    text = "Create a diet list",
-                    onClick = {
-                        showDialog = true
-
-                        /*geminiAiViewModel.generateDiet(
-                            "27 yaşında, 165 cm boyunda, 62 kg, kadın kullanıcı.\n" +
-                                    "Hedef: 1 ayda 3 kilo vermek.\n" +
-                                    "Aktivite: Orta (haftada 3 gün spor).\n" +
-                                    "Beslenme tercihi: Vejetaryen.\n" +
-                                    "Alerjiler: Laktoz.\n" +
-                                    "Not: Öğle yemeği hafif olsun.\n" +
-                                    "Bu bilgilerle günlük 3 ana öğün her öğün en fazla iki yiyecek olsun + 2 ara öğünlük bir haftalık diyet listesi hazırla."
-                        )*/
-
-
-                    },
-                    maxWidth = maxWidth
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 4.dp, end = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth(0.48f) // weight yerine fillMaxWidth
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFFE67386).copy(0.45f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.steep_icon),
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, end = 8.dp)) {
-                            Text(
-                                text = "Step to walk",
-                                fontFamily = PoppinBold,
-                                fontSize = 14.sp
-                            )
-
-                            Text(
-                                text = "5000",
-                                fontFamily = PoppinRegular,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .fillMaxWidth() // Remaining space
-                        .clip(RoundedCornerShape(12.dp))
-                        .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(12.dp))
-                        .background(Color.White)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
-                                .size(44.dp)
-                                .clip(CircleShape)
-                                .background(Color(0xFF70A056).copy(0.45f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.glass_water_icon),
-                                contentDescription = null,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, end = 8.dp)) {
-                            Text(
-                                text = "Drink Water",
-                                fontFamily = PoppinBold,
-                                fontSize = 14.sp
-                            )
-
-                            Text(
-                                text = "12 glass",
-                                fontFamily = PoppinRegular,
-                                fontSize = 16.sp
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(16.dp))
-                    .background(Color.White)
-            ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(8.dp),
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(16.dp))
+                        .background(Color.White),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.calories_default_icon),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(64.dp),
-                                    tint = Color(0xFFF5A857)
-                                )
-
-                                Text(
-                                    text = "Calorie",
-                                    fontFamily = PoppinBold,
-                                    fontSize = 24.sp,
-                                    color = Color(0xFFE67386)
-                                )
-                            }
-
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "1250",
-                                    fontSize = 32.sp,
-                                    lineHeight = 32.sp,
-                                    fontFamily = PoppinBold,
-                                    color = Color.Black
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = "kcal",
-                                    fontSize = 20.sp,
-                                    fontFamily = PoppinMedium,
-                                    color = Color(0xFF828282)
-                                )
-                            }
-                        }
+                        Text(
+                            text = "",
+                            modifier = Modifier.size(24.dp)
+                        )
 
                         Text(
-                            text = "target $totalCalorie kcal",
-                            fontSize = 16.sp,
+                            text = "Today",
+                            fontFamily = PoppinSemiBold,
                             color = Color.Black,
-                            fontFamily = PoppinMedium
+                            fontSize = 24.sp
+                        )
+
+                        Image(
+                            painter = painterResource(R.drawable.view_list_icon),
+                            contentDescription = "View List Icon",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable(onClick = {
+                                    navControllerAppHost.navigate("DietListScreen") {
+                                        popUpTo(navControllerAppHost.graph.id) {
+                                            inclusive = true
+                                        }
+                                    }
+                                })
                         )
                     }
 
-                    WeeklyCalorieChart()
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "$getCurrentMealTimeInformation",
+                        fontStyle = FontStyle.Italic,
+                        color = Color.Black,
+                        fontSize = 18.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    val currentMeal = foodImage[currentMealIndex]
+                    val currentMealImages = listOf(currentMeal.foodImageOne, currentMeal.foodImageTwo)
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        // Sol ok - önceki resim
+                        Image(
+                            painter = painterResource(R.drawable.chevron_left_icon),
+                            contentDescription = "Önceki Resim",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    currentImageIndex = if (currentImageIndex > 0) {
+                                        currentImageIndex - 1
+                                    } else {
+                                        currentMealImages.size - 1 // Son resme git
+                                    }
+                                }
+                        )
+
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        // Şu anki resim
+                        Image(
+                            painter = painterResource(currentMealImages[currentImageIndex]),
+                            contentDescription = null,
+                            modifier = Modifier.size(96.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(24.dp))
+
+                        // Sağ ok - sonraki resim
+                        Image(
+                            painter = painterResource(R.drawable.chevron_right_icon),
+                            contentDescription = "Sonraki Resim",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clickable {
+                                    currentImageIndex = if (currentImageIndex < currentMealImages.size - 1) {
+                                        currentImageIndex + 1
+                                    } else {
+                                        0 // İlk resme dön
+                                    }
+                                }
+                        )
+                    }
+
+                    // Öğün zamanı değiştiğinde resim indeksini resetle
+                    LaunchedEffect(currentMealTime) {
+                        currentImageIndex = 0
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Güvenli null kontrolü ile
+                    Text(
+                        text = currentDayDiet?.lunchTwoFood ?: "",
+                        fontSize = 12.sp,
+                        color = Color.Black,
+                        fontStyle = FontStyle.Italic
+                    )
+
+                    Text(
+                        text = "${currentDayDiet?.lunchCalorie ?: "0"} Kcal",
+                        fontSize = 12.sp,
+                        color = Color.Black,
+                        fontFamily = PoppinSemiBold
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Canvas(modifier = Modifier.fillMaxWidth().height(4.dp)) {
+                        val start = Offset(x = size.width * 0.1f, y = size.height * 0.5f)
+                        val end = Offset(x = size.width * 0.9f, y = size.height * 0.5f)
+
+                        drawLine(
+                            color = Color(0xFFC6C6C6),
+                            start = start,
+                            end = end,
+                            strokeWidth = 2.dp.toPx(),
+                            cap = StrokeCap.Round,
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        Image(
+                            painter = painterResource(R.drawable.dieat_food_icon),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .padding(top = 12.dp, start = 12.dp, bottom = 12.dp)
+                                .size(152.dp, 116.dp)
+                        )
+
+                        Column(
+                            modifier = Modifier.padding(
+                                top = 12.dp,
+                                start = 12.dp,
+                                bottom = 12.dp
+                            )
+                        ) {
+                            Text(
+                                text = "Create a diet list\nwith AI",
+                                fontFamily = PoppinExtraBold,
+                                fontSize = 20.sp,
+                                color = Color(0xFFE67386)
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Text(
+                                text = "Add foods with correct\ncalories using AI.",
+                                fontFamily = PoppinMedium,
+                                fontSize = 14.sp,
+                                color = Color.Black
+                            )
+                        }
+                    }
+
+                    CustomDailyDataButton(
+                        text = "Create a diet list",
+                        onClick = {
+                            showDialog = true
+                        },
+                        maxWidth = maxWidth
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth(0.48f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFFE67386).copy(0.45f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.steep_icon),
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, end = 8.dp)) {
+                                Text(
+                                    text = "Step to walk",
+                                    fontFamily = PoppinBold,
+                                    fontSize = 14.sp
+                                )
+
+                                Text(
+                                    text = "5000",
+                                    fontFamily = PoppinRegular,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(12.dp))
+                            .background(Color.White)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 8.dp, start = 8.dp, bottom = 8.dp)
+                                    .size(44.dp)
+                                    .clip(CircleShape)
+                                    .background(Color(0xFF70A056).copy(0.45f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Image(
+                                    painter = painterResource(R.drawable.glass_water_icon),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(30.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Column(modifier = Modifier.padding(top = 8.dp, bottom = 8.dp, end = 8.dp)) {
+                                Text(
+                                    text = "Drink Water",
+                                    fontFamily = PoppinBold,
+                                    fontSize = 14.sp
+                                )
+
+                                Text(
+                                    text = "12 glass",
+                                    fontFamily = PoppinRegular,
+                                    fontSize = 16.sp
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .border(1.dp, Color(0xFFE7E4E4), RoundedCornerShape(16.dp))
+                        .background(Color.White)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.calories_default_icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(64.dp),
+                                        tint = Color(0xFFF5A857)
+                                    )
+
+                                    Text(
+                                        text = "Calorie",
+                                        fontFamily = PoppinBold,
+                                        fontSize = 24.sp,
+                                        color = Color(0xFFE67386)
+                                    )
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "1250",
+                                        fontSize = 32.sp,
+                                        lineHeight = 32.sp,
+                                        fontFamily = PoppinBold,
+                                        color = Color.Black
+                                    )
+
+                                    Spacer(modifier = Modifier.width(8.dp))
+
+                                    Text(
+                                        text = "kcal",
+                                        fontSize = 20.sp,
+                                        fontFamily = PoppinMedium,
+                                        color = Color(0xFF828282)
+                                    )
+                                }
+                            }
+
+                            Text(
+                                text = "target $totalCalorie kcal",
+                                fontSize = 16.sp,
+                                color = Color.Black,
+                                fontFamily = PoppinMedium
+                            )
+                        }
+
+                        WeeklyCalorieChart()
+                    }
                 }
             }
-        }
         }
     }
 }
@@ -1023,27 +1026,38 @@ fun DietPlanDialog(
                                                 notes = notes.trim()
                                             )
 
-                                            if (dietPlanData.goal == "" && dietPlanData.notes == "" && dietPlanData.allergies =="" && dietPlanData.dietaryPreference == "" && dietPlanData.activity == ""){
-
-                                                Toast.makeText(context, "Lütfen tüm gerekli alanları doldurun",Toast.LENGTH_SHORT).show()
-
-                                            }
-                                            else{
+                                            if (dietPlanData.goal.isEmpty() && dietPlanData.activity.isEmpty()) {
+                                                Toast.makeText(context, "Lütfen en az hedef ve aktivite seviyenizi belirtin", Toast.LENGTH_SHORT).show()
+                                            } else {
                                                 roomViewModel.deleteAllDietItems()
 
-                                                val dietText =
-                                                    "27 yaşında, 165 cm boyunda, 62 kg, kadın kullanıcı.\n" +
-                                                            "Hedef: ${dietPlanData.goal}" +
-                                                            "Aktivite: ${dietPlanData.activity}.\n" +
-                                                            "Beslenme tercihi: ${dietPlanData.dietaryPreference}\n" +
-                                                            "Alerjiler: ${dietPlanData.allergies}\n" +
-                                                            "Not: ${dietPlanData.notes}\n" +
-                                                            "Bu bilgilerle günlük 3 ana öğün her öğün en fazla iki yiyecek olsun + 2 ara öğünlük bir haftalık diyet listesi hazırla."
+                                                val dietText = buildString {
+                                                    append("27 yaşında, 165 cm boyunda, 62 kg, kadın kullanıcı için:\n")
+                                                    append("Hedef: ${dietPlanData.goal.ifEmpty { "Sağlıklı beslenme" }}\n")
+                                                    append("Aktivite seviyesi: ${dietPlanData.activity.ifEmpty { "Orta seviye" }}\n")
+                                                    if (dietPlanData.dietaryPreference.isNotEmpty()) {
+                                                        append("Beslenme tercihi: ${dietPlanData.dietaryPreference}\n")
+                                                    }
+                                                    if (dietPlanData.allergies.isNotEmpty()) {
+                                                        append("Alerjiler/kısıtlamalar: ${dietPlanData.allergies}\n")
+                                                    }
+                                                    if (dietPlanData.notes.isNotEmpty()) {
+                                                        append("Özel notlar: ${dietPlanData.notes}\n")
+                                                    }
+                                                    append("\nLütfen günlük 7 gün için 3 ana öğün (kahvaltı, öğle yemeği, akşam yemeği) hazırla. ")
+                                                    append("Her öğün için maksimum 2 yiyecek öner ve her öğünün kalorisini belirt. ")
+                                                    append("Format şu şekilde olsun:\n\n")
+                                                    append("**Pazartesi:**\n")
+                                                    append("* **Kahvaltı (Yaklaşık 400 kalori):** Yiyecek1 + Yiyecek2\n")
+                                                    append("* **Öğle Yemeği (Yaklaşık 500 kalori):** Yiyecek1 + Yiyecek2\n")
+                                                    append("* **Akşam Yemeği (Yaklaşık 450 kalori):** Yiyecek1 + Yiyecek2\n\n")
+                                                    append("Bu formatı tüm 7 gün için tekrarla.")
+                                                }
 
+                                                Log.d("DietDialog", "Gönderilen prompt: $dietText")
                                                 geminiAiViewModel.generateDiet(dietText)
-
+                                                onDismiss()
                                             }
-
                                         }
                                     },
                                     modifier = Modifier.weight(if (currentStep > 0) 1f else 1f),
@@ -1215,20 +1229,25 @@ data class DietPlanData(
     val notes: String
 )
 
-
-// Düzeltilmiş parse fonksiyonları
+// Düzeltilmiş ve iyileştirilmiş parse fonksiyonları
 fun parseDietPlanAndSave(aiResponse: String, roomViewModel: RoomViewModel) {
     try {
+        Log.d("DietParser", "=== PARSE İŞLEMİ BAŞLADI ===")
         Log.d("DietParser", "AI Response uzunluğu: ${aiResponse.length}")
-        Log.d("DietParser", "AI Response ilk 500 karakter: ${aiResponse.take(500)}")
+        Log.d("DietParser", "AI Response ilk 1000 karakter: ${aiResponse.take(1000)}")
 
         val days = listOf("Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar")
         var successCount = 0
 
         days.forEach { dayName ->
+            Log.d("DietParser", "\n--- $dayName İÇİN PARSE İŞLEMİ ---")
             val dayData = extractDayData(aiResponse, dayName)
             if (dayData != null) {
-                Log.d("DietParser", "✅ $dayName için data parse edildi")
+                Log.d("DietParser", "✅ $dayName başarıyla parse edildi")
+                Log.d("DietParser", "Kahvaltı: ${dayData.breakfastCalorie} kcal - ${dayData.breakfastOneFood} + ${dayData.breakfastTwoFood}")
+                Log.d("DietParser", "Öğle: ${dayData.lunchCalorie} kcal - ${dayData.lunchOneFood} + ${dayData.lunchTwoFood}")
+                Log.d("DietParser", "Akşam: ${dayData.eveningMealCalorie} kcal - ${dayData.eveningMealOneFood} + ${dayData.eveningMealTwoFood}")
+
                 roomViewModel.dietListInsert(
                     dayData.day,
                     dayData.breakfastCalorie,
@@ -1243,58 +1262,81 @@ fun parseDietPlanAndSave(aiResponse: String, roomViewModel: RoomViewModel) {
                 )
                 successCount++
             } else {
-                Log.w("DietParser", "❌ $dayName için data parse edilemedi")
+                Log.w("DietParser", "❌ $dayName parse edilemedi")
             }
         }
 
-        Log.d("DietParser", "Toplam parse edilen gün sayısı: $successCount")
+        Log.d("DietParser", "=== PARSE İŞLEMİ TAMAMLANDI ===")
+        Log.d("DietParser", "Toplam başarılı parse: $successCount/7")
     } catch (e: Exception) {
-        Log.e("DietParser", "Parse edilirken hata oluştu: ${e.message}")
+        Log.e("DietParser", "Parse sırasında hata: ${e.message}")
         e.printStackTrace()
     }
 }
+
 private fun extractDayData(response: String, dayName: String): DietItem? {
     try {
         Log.d("DietParser", "🔍 $dayName için arama başlıyor...")
 
-        // AI yanıtındaki format: **Pazartesi:**
-        val dayPattern = "\\*\\*$dayName:\\*\\*".toRegex(RegexOption.IGNORE_CASE)
-        val dayMatch = dayPattern.find(response)
+        // Günün başlangıcını bul - daha esnek pattern
+        val dayPatterns = listOf(
+            "\\*\\*$dayName\\s*:\\s*\\*\\*".toRegex(RegexOption.IGNORE_CASE),
+            "\\*\\*$dayName\\s*\\*\\*".toRegex(RegexOption.IGNORE_CASE),
+            "$dayName\\s*:".toRegex(RegexOption.IGNORE_CASE)
+        )
 
-        if (dayMatch == null) {
+        var dayStart = -1
+        for (pattern in dayPatterns) {
+            val match = pattern.find(response)
+            if (match != null) {
+                dayStart = match.range.first
+                Log.d("DietParser", "✅ $dayName bulundu pozisyon: $dayStart")
+                break
+            }
+        }
+
+        if (dayStart == -1) {
             Log.w("DietParser", "❌ $dayName için başlangıç bulunamadı")
             return null
         }
 
-        val dayStart = dayMatch.range.first
-        Log.d("DietParser", "✅ $dayName bulundu, pozisyon: $dayStart")
-
         // Bir sonraki günün başlangıcını bul
         val allDays = listOf("Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar")
-        val nextDayPatterns = allDays.map { "\\*\\*$it:\\*\\*".toRegex(RegexOption.IGNORE_CASE) }
-
         var nextDayStart = response.length
-        for (pattern in nextDayPatterns) {
-            val nextMatch = pattern.find(response, dayStart + dayName.length)
-            if (nextMatch != null && nextMatch.range.first < nextDayStart) {
-                nextDayStart = nextMatch.range.first
+
+        for (nextDay in allDays) {
+            if (nextDay != dayName) {
+                for (pattern in dayPatterns) {
+                    val nextDayPattern = pattern.pattern.replace(dayName, nextDay).toRegex(RegexOption.IGNORE_CASE)
+                    val nextMatch = nextDayPattern.find(response, dayStart + 1)
+                    if (nextMatch != null && nextMatch.range.first > dayStart && nextMatch.range.first < nextDayStart) {
+                        nextDayStart = nextMatch.range.first
+                    }
+                }
             }
         }
 
         val dayContent = response.substring(dayStart, nextDayStart)
         Log.d("DietParser", "$dayName içerik uzunluğu: ${dayContent.length}")
-        Log.d("DietParser", "$dayName içerik önizleme: ${dayContent.take(300)}")
+        Log.d("DietParser", "$dayName içerik:\n${dayContent}")
 
-        val breakfast = parseMealFromGeminiFormat(dayContent, "Kahvaltı")
-        val lunch = parseMealFromGeminiFormat(dayContent, "Öğle Yemeği")
-        val dinner = parseMealFromGeminiFormat(dayContent, "Akşam Yemeği")
+        // Öğünleri parse et
+        val breakfast = parseMealFromContent(dayContent, "Kahvaltı")
+        val lunch = parseMealFromContent(dayContent, "Öğle")
+        val dinner = parseMealFromContent(dayContent, "Akşam")
 
         Log.d("DietParser", """
-            $dayName Parse Sonuçları:
-            Kahvaltı: ${breakfast.calorie}kcal, ${breakfast.firstFood}, ${breakfast.secondFood}
-            Öğle: ${lunch.calorie}kcal, ${lunch.firstFood}, ${lunch.secondFood}
-            Akşam: ${dinner.calorie}kcal, ${dinner.firstFood}, ${dinner.secondFood}
+            $dayName Final Parse Sonuçları:
+            Kahvaltı: ${breakfast.calorie}kcal - "${breakfast.firstFood}" + "${breakfast.secondFood}"
+            Öğle: ${lunch.calorie}kcal - "${lunch.firstFood}" + "${lunch.secondFood}"
+            Akşam: ${dinner.calorie}kcal - "${dinner.firstFood}" + "${dinner.secondFood}"
         """.trimIndent())
+
+        // Verilerin geçerli olup olmadığını kontrol et
+        if (breakfast.calorie == "0" && lunch.calorie == "0" && dinner.calorie == "0") {
+            Log.w("DietParser", "$dayName için hiçbir geçerli öğün bulunamadı")
+            return null
+        }
 
         return DietItem(
             id = 0,
@@ -1310,96 +1352,125 @@ private fun extractDayData(response: String, dayName: String): DietItem? {
             eveningMealTwoFood = dinner.secondFood
         )
     } catch (e: Exception) {
-        Log.e("DietParser", "Gün parse edilirken hata: $dayName - ${e.message}")
+        Log.e("DietParser", "$dayName parse edilirken hata: ${e.message}")
         e.printStackTrace()
         return null
     }
 }
 
-private fun parseMealFromGeminiFormat(dayContent: String, mealName: String): MealData {
+private fun parseMealFromContent(dayContent: String, mealName: String): MealData {
     try {
         Log.d("DietParser", "🍽️ $mealName parse ediliyor...")
 
-        // Gemini formatı: * **Kahvaltı (Yaklaşık 400 kalori):** yiyecek1 + yiyecek2
-        val mealPattern = "\\*\\s*\\*\\*$mealName\\s*\\(.*?(\\d+)\\s*kalori\\):\\*\\*\\s*(.+?)(?=\\*\\s*\\*\\*|$)".toRegex(
-            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+        // Farklı formatlar için pattern listesi
+        val patterns = listOf(
+            // * **Kahvaltı (Yaklaşık 400 kalori):** yiyecek1 + yiyecek2
+            "\\*\\s*\\*\\*$mealName.*?\\((.*?)\\d+(.*?)kalori.*?\\).*?:\\*\\*\\s*(.+?)(?=\\n\\*|\\n\\n|$)".toRegex(
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+            ),
+            // **Kahvaltı:** (400 kalori) yiyecek1 + yiyecek2
+            "\\*\\*$mealName.*?:\\*\\*.*?\\((.*?)\\d+(.*?)kalori.*?\\)\\s*(.+?)(?=\\n\\*|\\n\\n|$)".toRegex(
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+            ),
+            // Kahvaltı: 400 kalori - yiyecek1 + yiyecek2
+            "$mealName.*?:\\s*(\\d+)\\s*kalori.*?[:-]\\s*(.+?)(?=\\n|$)".toRegex(
+                setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE)
+            )
         )
 
-        val mealMatch = mealPattern.find(dayContent)
-        if (mealMatch != null) {
-            Log.d("DietParser", "✅ $mealName için pattern bulundu")
+        var calorie = "0"
+        var foodContent = ""
 
-            val calorie = mealMatch.groupValues[1]
-            val foodContent = mealMatch.groupValues[2].trim()
+        for (pattern in patterns) {
+            val match = pattern.find(dayContent)
+            if (match != null) {
+                Log.d("DietParser", "✅ $mealName için pattern eşleşti")
+                Log.d("DietParser", "Match groups: ${match.groupValues}")
 
-            Log.d("DietParser", "$mealName - Kalori: $calorie, İçerik: $foodContent")
+                // Kaloriyi bul
+                for (i in 1 until match.groupValues.size) {
+                    val group = match.groupValues[i]
+                    val calorieMatch = "\\d+".toRegex().find(group)
+                    if (calorieMatch != null) {
+                        calorie = calorieMatch.value
+                        Log.d("DietParser", "Kalori bulundu: $calorie")
+                        break
+                    }
+                }
 
-            val foods = extractFoodsFromGeminiFormat(foodContent)
-
-            val result = MealData(
-                calorie = calorie,
-                firstFood = foods.getOrNull(0) ?: "",
-                secondFood = foods.getOrNull(1) ?: ""
-            )
-
-            Log.d("DietParser", "$mealName Final: $result")
-            return result
-        } else {
-            Log.w("DietParser", "❌ $mealName için pattern bulunamadı")
-            // Debug için dayContent'in bir kısmını logla
-            Log.d("DietParser", "Day content sample: ${dayContent.take(500)}")
+                // Yiyecek içeriğini al
+                foodContent = match.groupValues.last().trim()
+                Log.d("DietParser", "Yiyecek içeriği: $foodContent")
+                break
+            }
         }
 
-        return MealData("0", "", "")
+        if (calorie == "0" || foodContent.isEmpty()) {
+            Log.w("DietParser", "❌ $mealName için kalori veya yiyecek bulunamadı")
+            return MealData("0", "", "")
+        }
+
+        val foods = extractFoodsFromContent(foodContent)
+        val result = MealData(
+            calorie = calorie,
+            firstFood = foods.getOrNull(0) ?: "",
+            secondFood = foods.getOrNull(1) ?: ""
+        )
+
+        Log.d("DietParser", "$mealName sonuç: $result")
+        return result
 
     } catch (e: Exception) {
-        Log.e("DietParser", "Öğün parse edilirken hata: $mealName - ${e.message}")
+        Log.e("DietParser", "$mealName parse edilirken hata: ${e.message}")
         e.printStackTrace()
         return MealData("0", "", "")
     }
 }
 
-private fun extractFoodsFromGeminiFormat(foodContent: String): List<String> {
+private fun extractFoodsFromContent(foodContent: String): List<String> {
     try {
-        Log.d("DietParser", "🥘 Gemini formatında yiyecek ayırma: $foodContent")
+        Log.d("DietParser", "🥘 Yiyecek ayırma: '$foodContent'")
 
-        // Gemini formatı: "1 Kase (200 gr) Yulaf Ezmesi (K) + 1 Adet Kavrulmuş Kırmızıbiber (P,Y)"
-
+        // İçeriği temizle
         var cleanContent = foodContent
-            .replace(Regex("\\([^)]*\\)"), "") // Parantez içindeki her şeyi kaldır (200 gr), (K), (P,Y) vb.
-            .replace(Regex("\\d+\\s*(Kase|Porsiyon|Adet|Dilim|Avuç|Çorba Kaşığı|Orta Boy)\\s*"), "") // Miktar ifadelerini kaldır
-            .replace(Regex("\\s+"), " ") // Fazla boşlukları tek boşluğa çevir
+            .replace(Regex("\\([^)]*\\)"), "") // Parantez içlerini kaldır
+            .replace(Regex("\\d+\\s*(adet|kase|porsiyon|dilim|avuç|çorba kaşığı|orta boy|küçük|büyük|gr|gram|ml)", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("yaklaşık|toplam", RegexOption.IGNORE_CASE), "")
+            .replace(Regex("\\s+"), " ")
             .trim()
 
-        Log.d("DietParser", "Temizlenmiş içerik: $cleanContent")
+        Log.d("DietParser", "Temizlenmiş: '$cleanContent'")
 
-        // + işareti ile ayır
-        val foods = if (cleanContent.contains("+")) {
-            cleanContent.split("+")
-                .map { it.trim() }
-                .filter { it.isNotBlank() && it.length > 2 }
-        } else {
-            // + yoksa virgül ile ayırmaya çalış
-            if (cleanContent.contains(",")) {
-                cleanContent.split(",")
+        // Farklı ayırıcıları dene
+        val separators = listOf("+", "&", "ve", ",", "-", ":")
+        var foods = listOf<String>()
+
+        for (separator in separators) {
+            if (cleanContent.contains(separator, ignoreCase = true)) {
+                foods = cleanContent.split(separator, ignoreCase = true)
                     .map { it.trim() }
-                    .filter { it.isNotBlank() && it.length > 2 }
-            } else {
-                // Hiçbiri yoksa tüm içeriği tek yiyecek olarak al
-                listOf(cleanContent).filter { it.isNotBlank() }
+                    .filter { it.isNotEmpty() && it.length > 1 }
+                Log.d("DietParser", "Ayırıcı '$separator' ile bölündü: $foods")
+                break
             }
         }
 
+        // Hiçbir ayırıcı yoksa tüm içeriği tek yiyecek olarak al
+        if (foods.isEmpty() && cleanContent.isNotEmpty()) {
+            foods = listOf(cleanContent)
+        }
+
+        // Final temizlik ve filtreleme
         val finalFoods = foods
             .take(2) // Sadece ilk 2 yiyeceği al
             .map { food ->
                 food.replace(Regex("^\\d+\\.?\\s*"), "") // Başındaki numaraları kaldır
-                    .replace(Regex("kalori.*$"), "") // Sonundaki kalori bilgisini kaldır
+                    .replace(Regex("kalori.*$", RegexOption.IGNORE_CASE), "")
                     .trim()
             }
-            .filter { it.isNotBlank() && it.length > 1 }
+            .filter { it.isNotEmpty() && it.length > 2 }
 
-        Log.d("DietParser", "Çıkarılan yiyecekler: $finalFoods")
+        Log.d("DietParser", "Final yiyecekler: $finalFoods")
         return finalFoods
 
     } catch (e: Exception) {
@@ -1410,17 +1481,17 @@ private fun extractFoodsFromGeminiFormat(foodContent: String): List<String> {
 }
 
 data class DailyDietItem(
-   val  breakfastCalorie: String,
-   val  breakfastOneFood: String,
-   val  breakfastTwoFood: String,
+    val  breakfastCalorie: String,
+    val  breakfastOneFood: String,
+    val  breakfastTwoFood: String,
 
-   val  lunchCalorie: String,
-   val  lunchOneFood: String,
-   val  lunchTwoFood: String,
+    val  lunchCalorie: String,
+    val  lunchOneFood: String,
+    val  lunchTwoFood: String,
 
-   val  eveningMealCalorie: String,
-   val  eveningMealOneFood: String,
-   val  eveningMealTwoFood: String
+    val  eveningMealCalorie: String,
+    val  eveningMealOneFood: String,
+    val  eveningMealTwoFood: String
 )
 
 data class MealData(
@@ -1430,5 +1501,5 @@ data class MealData(
 )
 
 data class ImageFoodList(val time : String,
-    val foodImageOne : Int,
-    val foodImageTwo: Int)
+                         val foodImageOne : Int,
+                         val foodImageTwo: Int)

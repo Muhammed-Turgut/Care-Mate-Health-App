@@ -49,11 +49,11 @@ import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
 import javax.annotation.meta.When
 
-
-
 @Composable
-fun PositionAnalysisScreen(navControllerAppHost: NavController,
-                           analysisViewModel: AnalysisViewModel = hiltViewModel()) {
+fun PositionAnalysisScreen(
+    navControllerAppHost: NavController,
+    analysisViewModel: AnalysisViewModel = hiltViewModel()
+) {
 
     val uiState by analysisViewModel.uiState.collectAsState()
 
@@ -70,87 +70,106 @@ fun PositionAnalysisScreen(navControllerAppHost: NavController,
                 .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
-            when{
-                uiState.analysisResult != null ->{
-
-                    if (uiState.landmarks.isNotEmpty()){
-
+            when {
+                uiState.analysisResult != null -> {
+                    if (uiState.landmarks.isNotEmpty()) {
                         // Header Section
-                        HeaderSection(uiState)
+                        HeaderSection(uiState,navControllerAppHost)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Analysis Results Section - Sadece analysisResult null değilse göster
+                        SpinalAnalysisResultsCard(uiState.analysisResult!!.spinalFlattening)
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        NeckAnalysisResultsCard(uiState.analysisResult!!.neckFlattening)
+                    } else {
+                        // Analysis result var ama landmarks yok
+                        NoDataMessage(
+                            title = "Landmark Verisi Bulunamadı",
+                            subtitle = "Analiz sonucu mevcut ancak pozisyon verileri eksik",
+                            navControllerAppHost = navControllerAppHost
+                        )
                     }
                 }
-
-
-                else ->{
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.Transparent, // Kartın arka plan rengi
-                                contentColor = Color.Transparent        // İçerikteki metin/icon rengi
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(24.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "Henüz analiz yapılmamış",
-                                    fontFamily = PoppinSemiBold,
-                                    fontSize = 20.sp,
-                                    color = Color.Black,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "Postür analiziniz için kamera ile fotoğraf çekin",
-                                    textAlign = TextAlign.Center,
-                                    fontFamily = PoppinRegular,
-                                    fontSize = 14.sp,
-                                    color = Color(0xFF6D6C6C)
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Button(
-                                    onClick = {
-                                        navControllerAppHost.navigate("PostureCameraScreen")
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Color(0xFF70A056), // Arka plan rengi
-                                        contentColor = Color.White,         // Metin/ikon rengi
-                                        disabledContainerColor = Color.Gray, // Buton devre dışı iken arka plan
-                                        disabledContentColor = Color.DarkGray // Buton devre dışı iken metin
-                                    )
-                                ) {
-                                    Text("Analiz Başlat")
-                                }
-                            }
-                        }
-                    }
+                else -> {
+                    // Analysis result yok - İlk açılış durumu
+                    NoDataMessage(
+                        title = "Henüz analiz yapılmamış",
+                        subtitle = "Postür analiziniz için kamera ile fotoğraf çekin",
+                        navControllerAppHost = navControllerAppHost
+                    )
                 }
-
             }
-
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Analysis Results Section
-            SpinalAnalysisResultsCard(uiState.analysisResult!!.spinalFlattening)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            NeckAnalysisResultsCard(uiState.analysisResult!!.neckFlattening)
         }
     }
 }
 
 @Composable
-private fun HeaderSection(uiState: AnalysisUiState) {
+private fun NoDataMessage(
+    title: String,
+    subtitle: String,
+    navControllerAppHost: NavController
+) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White,
+                contentColor = Color.Black
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = title,
+                    fontFamily = PoppinSemiBold,
+                    fontSize = 20.sp,
+                    color = Color.Black,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = subtitle,
+                    textAlign = TextAlign.Center,
+                    fontFamily = PoppinRegular,
+                    fontSize = 14.sp,
+                    color = Color(0xFF6D6C6C)
+                )
+                Spacer(modifier = Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        navControllerAppHost.navigate("PostureCameraScreen")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF70A056),
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Gray,
+                        disabledContentColor = Color.DarkGray
+                    )
+                ) {
+                    Text(
+                        text = "Analiz Başlat",
+                        fontFamily = PoppinMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeaderSection(uiState: AnalysisUiState,navControllerAppHost: NavController) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -162,22 +181,24 @@ private fun HeaderSection(uiState: AnalysisUiState) {
         Spacer(modifier = Modifier.height(16.dp))
 
         // Navigation Bar
-        NavigationBar()
+        NavigationBar(navControllerAppHost)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Analysis Canvas Card
         AnalysisCanvasCard(uiState)
 
-        // Overall Status
-        OverallStatusSection(uiState.analysisResult!!.overallRiskLevel)
+        // Overall Status - analysisResult null kontrolü eklendi
+        uiState.analysisResult?.let { analysisResult ->
+            OverallStatusSection(analysisResult.overallRiskLevel)
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
     }
 }
 
 @Composable
-private fun NavigationBar() {
+private fun NavigationBar(navControllerAppHost: NavController) {
     Row(
         modifier = Modifier
             .padding(horizontal = 8.dp)
@@ -191,7 +212,14 @@ private fun NavigationBar() {
         // Back Button
         NavigationButton(
             iconRes = R.drawable.chevron_left_icon,
-            onClick = { /* Handle back navigation */ }
+            onClick = {
+
+                navControllerAppHost.navigate("NavBarHostScreen"){
+                    popUpTo(navControllerAppHost.graph.id){
+                        inclusive  = true
+                    }
+                }
+            }
         )
 
         // Title
@@ -205,7 +233,14 @@ private fun NavigationBar() {
         // Close Button
         NavigationButton(
             iconRes = R.drawable.cancel_icon,
-            onClick = { /* Handle close */ }
+            onClick = {
+                navControllerAppHost.navigate("NavBarHostScreen"){
+                    popUpTo(navControllerAppHost.graph.id){
+                        inclusive  = true
+                    }
+                }
+            }
+
         )
     }
 }
@@ -244,6 +279,7 @@ private fun AnalysisCanvasCard(uiState: AnalysisUiState) {
         colors = CardDefaults.cardColors(Color(0xFFF8F8F8))
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // Landmarks'ı güvenli şekilde çiz
             uiState.landmarks.forEach { point ->
                 drawCircle(
                     color = Color.Red,
@@ -281,7 +317,7 @@ private fun OverallStatusSection(riskLevel: RiskLevel) {
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = "${riskLevel.description}",
+                text = riskLevel.description,
                 fontSize = 18.sp,
                 fontFamily = PoppinMedium,
                 color = Color(0xFFFF0000)
@@ -377,7 +413,7 @@ private fun SpinalAnalysisResultsCard(spinalAnalysis: SpinalAnalysis) {
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "${spinalAnalysis.recommendation}",
+                        text = spinalAnalysis.recommendation,
                         fontFamily = PoppinRegular,
                         fontSize = 14.sp,
                         color = Color.Black,
@@ -418,7 +454,6 @@ private fun SpinalAnalysisResultsCard(spinalAnalysis: SpinalAnalysis) {
         }
     }
 }
-
 
 @Composable
 private fun NeckAnalysisResultsCard(neckAnalysis: NeckAnalysis) {
@@ -459,7 +494,7 @@ private fun NeckAnalysisResultsCard(neckAnalysis: NeckAnalysis) {
             ) {
                 MeasurementRow(
                     label = "Ölçülen Açı",
-                    value = "${neckAnalysis.cervicalAngle.toInt()}"
+                    value = "${neckAnalysis.cervicalAngle.toInt()}°"
                 )
 
                 MeasurementRow(
@@ -496,7 +531,7 @@ private fun NeckAnalysisResultsCard(neckAnalysis: NeckAnalysis) {
                         .padding(16.dp)
                 ) {
                     Text(
-                        text = "${neckAnalysis.recommendation}",
+                        text = neckAnalysis.recommendation,
                         fontFamily = PoppinRegular,
                         fontSize = 14.sp,
                         color = Color.Black,
@@ -538,8 +573,6 @@ private fun NeckAnalysisResultsCard(neckAnalysis: NeckAnalysis) {
     }
 }
 
-
-
 @Composable
 private fun MeasurementRow(
     label: String,
@@ -565,8 +598,6 @@ private fun MeasurementRow(
         )
     }
 }
-
-
 
 @Composable
 fun ExerciseItemRow(exerciseItem: ExerciseItem) {
@@ -634,12 +665,9 @@ data class ExerciseItem(
     val animation: Int
 )
 
-@Preview( showBackground = true)
+@Preview(showBackground = true)
 @Composable
-private fun Show(){
-    val navControllerAppHost  = rememberNavController()
-
-    //PostureAnalysisResults()
-
-    //PositionAnalysisScreen(navControllerAppHost = navControllerAppHost)
+private fun Show() {
+    val navControllerAppHost = rememberNavController()
+    // PositionAnalysisScreen(navControllerAppHost = navControllerAppHost)
 }

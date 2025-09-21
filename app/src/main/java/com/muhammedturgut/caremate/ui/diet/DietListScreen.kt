@@ -1,5 +1,6 @@
 package com.muhammedturgut.caremate.ui.diet
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -64,6 +65,16 @@ fun DietListScreen(roomViewModel: RoomViewModel = hiltViewModel(),
         Column(modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally) {
+
+            BackHandler {
+                navControllerAppHost.navigate("NavBarHostScreen"){
+                    popUpTo(navControllerAppHost.graph.id){
+
+                        inclusive = true
+
+                    }
+                }
+            }
 
             Column(
                 modifier = Modifier
