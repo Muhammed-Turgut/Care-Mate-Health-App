@@ -14,6 +14,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.rememberNavController
 import com.muhammedturgut.caremate.ui.navigation.AppNavHost
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -32,6 +33,7 @@ class MainActivity : ComponentActivity() {
                         .padding(paddingValues)){
 
                         //Google gamini ai = AIzaSyABnWyx8V4HkqOYnXaG3xyG-cDDQhgsy70 api key
+                        //Google Gemini ai Chat Bot = AIzaSyBdMF6Bw7fwKCSBX8VV-oZdz8F_MUD1kzE
 
 
 
@@ -40,6 +42,9 @@ class MainActivity : ComponentActivity() {
                             val maxWidth = maxWidth
                             val maxHeight =maxHeight
                             val isTablet = maxWidth>600.dp
+                            val navController = rememberNavController()
+
+                           // PositionAnalysisScreen(navController)
 
                             AppNavHost(
                                 maxWidth =maxWidth,

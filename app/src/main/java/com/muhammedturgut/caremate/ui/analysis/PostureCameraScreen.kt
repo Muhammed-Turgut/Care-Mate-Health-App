@@ -44,6 +44,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.data.local.room.RoomViewModel
 import com.muhammedturgut.caremate.ui.camera.CameraPermissionViewModel
 import com.muhammedturgut.caremate.ui.camera.CameraPreview
 import com.muhammedturgut.caremate.ui.theme.PoppinBold
@@ -58,6 +59,7 @@ fun PostureCameraScreen(
     cameraPermissionViewModel: CameraPermissionViewModel = hiltViewModel(),
     analysisViewModel: AnalysisViewModel = hiltViewModel(),
     navControllerAppHost: NavController,
+    roomViewModel: RoomViewModel = hiltViewModel(),
     isTablet: Boolean,
     maxWidth: Dp,
     maxHeight: Dp
@@ -70,6 +72,8 @@ fun PostureCameraScreen(
     val isTorchOn = remember { mutableStateOf(false) }
     val flash = hasFlashLightDetailed(context)
     var showInstructions by remember { mutableStateOf(true) }
+
+    val uiState by analysisViewModel.uiState.collectAsState()
 
     val controller = remember {
         LifecycleCameraController(context).apply {
@@ -96,10 +100,30 @@ fun PostureCameraScreen(
     // Analiz tamamlandığında navigasyon
     LaunchedEffect(analysisState.analysisResult) {
         if (analysisState.analysisResult != null) {
+
             navControllerAppHost.navigate("PostureAnalysisResultScreen") {
                 popUpTo("PostureCameraScreen") { inclusive = true }
             }
         }
+    }
+
+    LaunchedEffect(uiState.analysisResult) {
+        val result = uiState.analysisResult
+        if (result != null) {
+            roomViewModel.insertPostureAnalysisItem(
+                curvatureGeneralCondition = result.overallRiskLevel.description,
+                curvatureSpine = result.spinalFlattening.flatteningPercentage.toString(),
+                measuredAngleCurvature = result.spinalFlattening.curvatureAngle.toString(),
+                normalRangeCurvature = result.spinalFlattening.deviationFromNormal.toString(),
+                curvatureText = result.spinalFlattening.recommendation.toString(),
+                neckGeneralCondition = result.neckFlattening.recommendation,
+                neckSpine = result.neckFlattening.flatteningPercentage.toString(),
+                measuredAngleNeck = result.neckFlattening.cervicalAngle.toString(),
+                normalRangeNeck = result.neckFlattening.normalRange.toString(),
+                curvatureTextNeck = result.neckFlattening.recommendation.toString(),
+            )
+        }
+
     }
 
     Scaffold(

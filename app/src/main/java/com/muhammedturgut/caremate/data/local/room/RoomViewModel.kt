@@ -27,8 +27,8 @@ class RoomViewModel @Inject constructor(
     private val TAG = "RoomViewModel"
 
     // Chat Data
-    private var _getAllChatItemList = MutableStateFlow<List<ChatData>>(emptyList())
-    val getAllItemChatList: StateFlow<List<ChatData>> = _getAllChatItemList
+    private val _getAllChatItemList = MutableStateFlow<List<ChatData>>(emptyList())
+    val getAllChatItemList: StateFlow<List<ChatData>> = _getAllChatItemList
 
     // Diet Items - Nullable'ları kaldırdım
     private val _dietItems = MutableStateFlow<List<DietItem>>(emptyList())
@@ -56,6 +56,7 @@ class RoomViewModel @Inject constructor(
         loadDailyUserData()
         getDietList() // Bu çağrıyı ekledim
         getDietItemByDay()
+        getAllChatDataItem()
     }
 
     fun loadDailyUserData() {
@@ -71,6 +72,15 @@ class RoomViewModel @Inject constructor(
                 _isLoading.value = false
                 Log.e(TAG, "loadDailyUserData error: ${e.message}")
             }
+        }
+    }
+
+    fun getAllChatDataItem() {
+        viewModelScope.launch {
+            roomRepository.getAllChatDataItem()
+                .collect { list ->
+                    _getAllChatItemList.value = list     // ✅ StateFlow’un değerini güncelle
+                }
         }
     }
 
@@ -264,6 +274,40 @@ class RoomViewModel @Inject constructor(
                 _currentDayDiet.value = null
             }
         }
+    }
+
+
+    fun insertPostureAnalysisItem(curvatureGeneralCondition: String,
+                                  curvatureSpine: String,
+                                  measuredAngleCurvature: String,
+                                  normalRangeCurvature: String,
+                                  curvatureText: String,
+                                  neckGeneralCondition: String,
+                                  neckSpine: String,
+                                  measuredAngleNeck: String,
+                                  normalRangeNeck: String,
+                                  curvatureTextNeck: String
+    ){
+        viewModelScope.launch {
+            try {
+                roomRepository.insertPostureAnalysisItem(curvatureGeneralCondition,
+                    curvatureSpine,
+                    measuredAngleCurvature,
+                    normalRangeCurvature,
+                    curvatureText,
+                    neckGeneralCondition,
+                    neckSpine,
+                    measuredAngleNeck,
+                    normalRangeNeck,
+                    curvatureTextNeck)
+
+            }catch (e: Exception){
+
+                Log.d(TAG,e.message.toString())
+
+            }
+        }
+
     }
 
 }

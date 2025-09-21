@@ -1,9 +1,11 @@
 package com.muhammedturgut.caremate.data.remote
 
+import android.util.Log
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import io.appwrite.BuildConfig
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -15,60 +17,48 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object ApiClient {
 
-    // Hugging Face Spaces API URL
-    private const val BASE_URL = "https://harezmii-caremate-health-api.hf.space/"
+    private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/"
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
-
-        // Logging interceptor - sadece debug modda aktif et
-        val logging = HttpLoggingInterceptor().apply {
+    fun provideLoggingInterceptor(): HttpLoggingInterceptor {
+        return HttpLoggingInterceptor().apply {
             level = HttpLoggingInterceptor.Level.BODY
         }
+    }
 
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(loggingInterceptor: HttpLoggingInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(logging)
-            .addInterceptor { chain ->
-                val originalRequest = chain.request()
-
-                // Request headers ekle
-                val newRequest = originalRequest.newBuilder()
-                    .addHeader("Content-Type", "application/json")
-                    .addHeader("Accept", "application/json, text/event-stream")
-                    .addHeader("User-Agent", "CareMate-Android-App/1.0")
-                    .build()
-
-                val response = chain.proceed(newRequest)
-
-                // Response'u logla
-                android.util.Log.d("ApiClient", "Request: ${originalRequest.method} ${originalRequest.url}")
-                android.util.Log.d("ApiClient", "Response: ${response.code} ${response.message}")
-
-                response
-            }
-            // Timeout ayarlarını artır - Hugging Face yavaş olabilir
-            .connectTimeout(90, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .writeTimeout(90, TimeUnit.SECONDS)
-            // Retry ayarları
-            .retryOnConnectionFailure(true)
+            .connectTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor(loggingInterceptor)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideRetrofit(client: OkHttpClient): Retrofit {
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(client)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideHFService(retrofit: Retrofit): HFService {
-        return retrofit.create(HFService::class.java)
+    fun provideGeminiApi(retrofit: Retrofit): GeminiApi {
+        return retrofit.create(GeminiApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideApiKey(): String {
+        val key = "AIzaSyAMP2E27IVd7qeFe09uX4eBCrNN8Ci1lz0"
+        Log.d("ApiClient", "API Key sağlandı. Uzunluk: ${key.length}")
+        return key
     }
 }

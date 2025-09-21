@@ -4,146 +4,212 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.muhammedturgut.caremate.data.remote.model.ChatMessage
 import com.muhammedturgut.caremate.data.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val repository: ChatRepository
+    private val chatRepository: ChatRepository
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "ChatViewModel"
+        private const val MIN_MESSAGE_LENGTH = 3
+    }
 
     private val _messages = MutableLiveData<List<ChatMessage>>(emptyList())
     val messages: LiveData<List<ChatMessage>> = _messages
 
-    private val _isLoading = MutableLiveData(false)
+    private val _isLoading = MutableLiveData<Boolean>(false)
     val isLoading: LiveData<Boolean> = _isLoading
 
-    private val _error = MutableLiveData<String?>()
+    private val _error = MutableLiveData<String?>(null)
     val error: LiveData<String?> = _error
 
-    private val _connectionStatus = MutableLiveData("Hazır")
-    val connectionStatus: LiveData<String> = _connectionStatus
+    private val _getAiMessage = MutableLiveData<ChatMessage?>(null)
+    val getAiMessage: LiveData<ChatMessage?> = _getAiMessage
+
+    // SADECE API'dan gelen cevapları tek tek almak için
+    private val _getApiResponse = MutableLiveData<String?>(null)
+    val getApiResponse: LiveData<String?> = _getApiResponse
+
+    // Konuşma geçmişi
+    private val conversationHistory = mutableListOf<ChatMessage>()
 
     init {
-        // Başlangıç mesajı ekle
-        addMessage(ChatMessage(
-            "🏥 CareMate Sağlık Asistanınıza hoş geldiniz!\n\nBelirtilerinizi detaylı bir şekilde yazın, size yardımcı olmaya çalışayım.\n\n⚠️ Bu tıbbi tanı değildir. Kesin tanı için doktora başvurun.",
-            isUser = false
-        ))
+        Log.d(TAG, "ChatViewModel başlatıldı")
+        addWelcomeMessage()
     }
 
-    fun sendMessage(symptoms: String) {
-        if (symptoms.isBlank() || _isLoading.value == true) {
-            Log.w("ChatViewModel", "Empty symptoms or already loading")
-            return
-        }
+    private fun addWelcomeMessage() {
+        val welcomeMessage = ChatMessage(
+            text = "Merhaba! Ben AI Doktor asistanınızım. Belirtilerinizi detaylı olarak anlatın, size yardımcı olmaya çalışayım. Lütfen unutmayın, bu bilgiler tıbbi tavsiye yerine geçmez.",
+            isUser = false
+        )
+        conversationHistory.add(welcomeMessage)
+        _messages.value = conversationHistory.toList()
 
-        Log.d("ChatViewModel", "Sending symptoms: $symptoms")
+        // Hoş geldin mesajını _getAiMessage'a ekle ama _getApiResponse'a EKLEME
+        _getAiMessage.value = welcomeMessage
 
-        // Kullanıcı mesajını ekle
-        addMessage(ChatMessage(symptoms.trim(), isUser = true))
+        Log.d(TAG, "Hoş geldin mesajı eklendi")
+    }
 
-        // Loading durumunu ayarla
-        _isLoading.value = true
-        _error.value = null
-        _connectionStatus.value = "API'ye bağlanılıyor..."
+    fun sendMessage(userText: String) {
+        val trimmedText = userText.trim()
 
-        // API çağrısı yap
-        repository.getPrediction(symptoms.trim()) { result, errorMsg ->
+        // Mesaj validasyonu
+        if (!validateMessage(trimmedText)) return
 
-            // UI thread'de güncelleme yap
-            _isLoading.postValue(false)
-            _connectionStatus.postValue("Tamamlandı")
+        Log.d(TAG, "Mesaj gönderiliyor: '${trimmedText.take(50)}...'")
 
-            if (errorMsg != null) {
-                Log.e("ChatViewModel", "API Error: $errorMsg")
-                _error.postValue(errorMsg)
-                _connectionStatus.postValue("Hata: $errorMsg")
+        viewModelScope.launch {
+            try {
+                // Loading başlat
+                setLoadingState(true)
 
-                // Hata durumunda varsayılan yardım mesajı
-                val errorMessage = """
-Üzgünüm, şu anda API'ye bağlanamıyorum. 
+                // Kullanıcı mesajını ekle
+                addUserMessage(trimmedText)
 
-**Genel Öneriler:**
-• Belirtileriniz ciddi ise doktora başvurun
-• Bol su için ve dinlenin
-• Ateş varsa vücut ısınızı kontrol edin
-• Acil durumlarda 112'yi arayın
+                // API çağrısı yap
+                val result = chatRepository.sendMessageWithHistory(conversationHistory)
 
-**⚠️ Önemli:** Bu tıbbi tanı değildir.
+                // Sonucu işle
+                handleApiResponse(result)
 
-Hata detayı: $errorMsg
-                """.trimIndent()
-
-                addMessage(ChatMessage(errorMessage, isUser = false))
-
-            } else if (result != null) {
-                Log.d("ChatViewModel", "API Success - Response length: ${result.length}")
-                _connectionStatus.postValue("Başarılı")
-
-                // Başarılı yanıtı ekle
-                addMessage(ChatMessage(result, isUser = false))
-
-                // Takip sorusu ekle
-                addMessage(ChatMessage(
-                    "\n💡 Başka belirtileriniz var mı? Varsa lütfen belirtin.",
-                    isUser = false
-                ))
-
-            } else {
-                Log.w("ChatViewModel", "No result and no error - unexpected state")
-                _error.postValue("Beklenmeyen durum")
-
-                addMessage(ChatMessage(
-                    "Beklenmeyen bir durum oluştu. Lütfen tekrar deneyin veya doktora başvurun.",
-                    isUser = false
-                ))
+            } catch (e: Exception) {
+                Log.e(TAG, "Beklenmeyen hata: ${e.message}", e)
+                handleError("Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.")
+            } finally {
+                setLoadingState(false)
             }
         }
     }
 
-    private fun addMessage(message: ChatMessage) {
-        val currentMessages = _messages.value.orEmpty().toMutableList()
-        currentMessages.add(message)
-        _messages.value = currentMessages
-
-        Log.d("ChatViewModel", "Message added - Total: ${currentMessages.size}, IsUser: ${message.isUser}, Text preview: ${message.text.take(50)}...")
-    }
-
-    fun clearChat() {
-        Log.d("ChatViewModel", "Clearing chat")
-
-        _messages.value = listOf(
-            ChatMessage(
-                "🤖 Chat temizlendi. AI ile yeni konuşma başlayabilirsiniz.\n\n⚠️ Bu tıbbi tanı değildir. Kesin tanı için doktora başvurun.",
-                isUser = false
-            )
-        )
-        _error.value = null
-        _connectionStatus.value = "Hazır"
-    }
-
-    fun retryLastMessage() {
-        val messages = _messages.value.orEmpty()
-        val lastUserMessage = messages.findLast { it.isUser }
-
-        if (lastUserMessage != null) {
-            Log.d("ChatViewModel", "Retrying last message: ${lastUserMessage.text}")
-            sendMessage(lastUserMessage.text)
+    private fun validateMessage(text: String): Boolean {
+        return when {
+            text.isBlank() -> {
+                Log.w(TAG, "Boş mesaj gönderme denemesi")
+                false
+            }
+            text.length < MIN_MESSAGE_LENGTH -> {
+                Log.w(TAG, "Çok kısa mesaj: ${text.length} karakter")
+                _error.value = "Lütfen daha detaylı açıklayın"
+                false
+            }
+            else -> true
         }
     }
 
-    // Test için
-    fun testConnection() {
-        _connectionStatus.value = "Test ediliyor..."
-        sendMessage("test belirtisi")
+    private fun addUserMessage(text: String) {
+        val userMessage = ChatMessage(text = text, isUser = true)
+        conversationHistory.add(userMessage)
+        updateUI()
+        Log.d(TAG, "Kullanıcı mesajı eklendi. Toplam: ${conversationHistory.size}")
+    }
+
+    private fun handleApiResponse(result: Result<String>) {
+        result.fold(
+            onSuccess = { response ->
+                Log.d(TAG, "API yanıtı başarılı: ${response.length} karakter")
+                val aiMessage = ChatMessage(text = response, isUser = false)
+                conversationHistory.add(aiMessage)
+                updateUI()
+                clearError()
+
+                // Tüm AI mesajlarını emit et
+                _getAiMessage.value = aiMessage
+
+                // SADECE API cevabını tek tek emit et (String olarak)
+                _getApiResponse.value = response
+                Log.d(TAG, "🎯 API cevabı tek tek emit edildi: '${response.take(50)}...'")
+            },
+            onFailure = { exception ->
+                Log.e(TAG, "API hatası: ${exception.message}")
+                handleError(exception.message ?: "Yanıt alınamadı")
+                val errorMessage = addErrorMessage("Üzgünüm, şu anda yanıt veremiyorum. Lütfen tekrar deneyin.")
+
+                // Hata mesajını _getAiMessage'a ekle
+                _getAiMessage.value = errorMessage
+
+                // API cevabı başarısız olduğu için null emit et
+                _getApiResponse.value = null
+                Log.d(TAG, "❌ API hatası - null emit edildi")
+            }
+        )
+    }
+
+    private fun handleError(errorMessage: String) {
+        _error.value = errorMessage
+        Log.e(TAG, "Hata durumu ayarlandı: $errorMessage")
+    }
+
+    private fun addErrorMessage(text: String): ChatMessage {
+        val errorMessage = ChatMessage(text = text, isUser = false)
+        conversationHistory.add(errorMessage)
+        updateUI()
+        return errorMessage
+    }
+
+    private fun setLoadingState(isLoading: Boolean) {
+        _isLoading.value = isLoading
+        Log.d(TAG, "Loading durumu: $isLoading")
+    }
+
+    private fun clearError() {
+        _error.value = null
+    }
+
+    private fun updateUI() {
+        _messages.value = conversationHistory.toList()
+    }
+
+    fun clearChat() {
+        Log.d(TAG, "Chat temizleniyor...")
+        conversationHistory.clear()
+        clearError()
+
+        // State'leri temizle
+        _getAiMessage.value = null
+        _getApiResponse.value = null
+
+        addWelcomeMessage() // Hoş geldin mesajını tekrar ekle
+        Log.d(TAG, "Chat temizlendi ve hoş geldin mesajı eklendi")
+    }
+
+    // API cevabını manuel olarak temizlemek için
+    fun clearApiResponse() {
+        _getApiResponse.value = null
+        Log.d(TAG, "API response state'i temizlendi")
+    }
+
+    // AI mesajını manuel olarak temizlemek için
+    fun clearAiMessage() {
+        _getAiMessage.value = null
+        Log.d(TAG, "AI mesaj state'i temizlendi")
+    }
+
+    // Son API cevabını almak için
+    fun getLastApiResponse(): String? {
+        return _getApiResponse.value
+    }
+
+    fun retryLastMessage() {
+        if (conversationHistory.isNotEmpty()) {
+            val lastUserMessage = conversationHistory.findLast { it.isUser }
+            lastUserMessage?.let { message ->
+                Log.d(TAG, "Son mesaj tekrar gönderiliyor: '${message.text.take(50)}...'")
+                sendMessage(message.text)
+            }
+        }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        Log.d(TAG, "ChatViewModel temizlendi")
     }
 }
-
-data class ChatMessage(
-    val text: String,
-    val isUser: Boolean,
-    val timestamp: Long = System.currentTimeMillis(),
-    val id: String = "${System.currentTimeMillis()}_${(0..1000).random()}"
-)

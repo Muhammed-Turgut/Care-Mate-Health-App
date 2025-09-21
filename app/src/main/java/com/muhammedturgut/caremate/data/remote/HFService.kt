@@ -1,55 +1,34 @@
 package com.muhammedturgut.caremate.data.remote
 
-import retrofit2.Call
+
 import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Headers
 import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.Query
 
-// /predict endpoint'i için (tek parametre)
-data class GradioRequest(
-    val data: List<String>
+data class GeminiRequest(
+    val contents: List<Content>
 )
 
-// /health_chat_api endpoint'i için (iki parametre)
-data class GradioChatRequest(
-    val data: List<Any> // [String, List<List<Any>>]
+data class Content(
+    val parts: List<Part>
 )
 
-// POST response - EVENT_ID döner
-data class GradioEventResponse(
-    val event_id: String? = null,
-    val error: String? = null
+data class Part(
+    val text: String
 )
 
-interface HFService {
+data class GeminiResponse(
+    val candidates: List<Candidate>?
+)
 
-    // /predict endpoint'i - Tek parametre (belirtiler)
-    @POST("gradio_api/call/predict")
-    @Headers("Content-Type: application/json")
-    fun startPrediction(
-        @Body request: GradioRequest
-    ): Call<GradioEventResponse>
+data class Candidate(
+    val content: Content?
+)
 
-    // /health_chat_api endpoint'i - İki parametre (mesaj + chat geçmişi)
-    @POST("gradio_api/call/health_chat_api")
-    @Headers("Content-Type: application/json")
-    fun startChatPrediction(
-        @Body request: GradioChatRequest
-    ): Call<GradioEventResponse>
-
-    // GET - Sonuç alma (her iki endpoint için aynı)
-    @GET("gradio_api/call/predict/{eventId}")
-    @Headers("Accept: text/event-stream")
-    fun getPredictionResult(
-        @Path("eventId") eventId: String
-    ): Call<okhttp3.ResponseBody>
-
-    // GET - Chat sonuç alma
-    @GET("gradio_api/call/health_chat_api/{eventId}")
-    @Headers("Accept: text/event-stream")
-    fun getChatPredictionResult(
-        @Path("eventId") eventId: String
-    ): Call<okhttp3.ResponseBody>
+interface GeminiApi {
+    @POST("models/gemini-1.5-flash:generateContent")
+    suspend fun generate(
+        @Query("key") key: String,
+        @Body body: GeminiRequest
+    ): GeminiResponse
 }

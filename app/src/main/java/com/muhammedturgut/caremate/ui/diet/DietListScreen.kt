@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,6 +92,15 @@ fun DietListScreen(roomViewModel: RoomViewModel = hiltViewModel(),
                         modifier = Modifier
                             .size(32.dp) // daha büyük bir daire
                             .clip(CircleShape)
+                            .clickable(onClick = {
+                                navControllerAppHost.navigate("NavBarHostScreen"){
+                                    popUpTo(navControllerAppHost.graph.id){
+
+                                        inclusive = true
+
+                                    }
+                                }
+                            })
                             .background(Color.White),
                         contentAlignment = Alignment.Center // ikonu ortala
                     ) {
@@ -115,7 +125,16 @@ fun DietListScreen(roomViewModel: RoomViewModel = hiltViewModel(),
                         modifier = Modifier
                             .size(32.dp)
                             .clip(CircleShape)
-                            .background(Color.White),
+                            .clickable(onClick = {
+                                navControllerAppHost.navigate("NavBarHostScreen"){
+                                    popUpTo(navControllerAppHost.graph.id){
+
+                                        inclusive = true
+
+                                    }
+                                }
+                            }
+                            ).background(Color.White),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -310,7 +329,7 @@ fun DietListScreen(roomViewModel: RoomViewModel = hiltViewModel(),
 
                 items(dietItems){ item->
                     DietListRow(item)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                 }
 
@@ -331,61 +350,225 @@ fun DietListScreen(roomViewModel: RoomViewModel = hiltViewModel(),
 @Composable
 private fun DietListRow(dietItems: DietItem){
 
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .clip(RoundedCornerShape(12.dp))
-        .border(1.dp, Color(0xFFE4E4E4),RoundedCornerShape(12.dp))
-        .background(Color.White),
-        contentAlignment = Alignment.Center){
+    Column(modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally){
 
-        Column(modifier = Modifier.fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 8.dp)){
+        Row(modifier = Modifier.fillMaxWidth()
+            .clip(CircleShape)
+            .background(Color(0xFF70A056))
+            .padding(horizontal = 16.dp, vertical = 4.dp)){
 
             Text(text = "${dietItems.day}",
-                fontFamily = PoppinSemiBold,
                 fontSize = 16.sp,
-                color = Color(0xFFF5A857)
-            )
+                fontFamily = PoppinSemiBold,
+                color = Color.White,)
+        }
 
-            Row(modifier = Modifier.fillMaxWidth()){
 
-                Text(text = "Yulaf Ezmesi",
-                    fontFamily = PoppinSemiBold,
-                    fontSize = 14.sp,
-                    color = Color(0xFFA4A4A4)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFFE4E4E4),RoundedCornerShape(12.dp))
+            .background(Color.White),
+            contentAlignment = Alignment.Center){
+
+            Column(modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)){
+
+                Text(text = "Morning",
+                    fontFamily = PoppinBold,
+                    fontSize = 16.sp,
+                    color = Color.Black
                 )
 
-               Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "195"+" Kcal",
-                    fontFamily = PoppinSemiBold,
-                    fontSize = 14.sp,
-                    color = Color(0xFFA4A4A4)
-                )
+                Row(modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start){
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally){
+
+                        Text(text = "Calorie",
+                            fontFamily = PoppinBold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF7B7878)
+                        )
+
+                        Text(text = "${dietItems.breakfastCalorie}",
+                            fontFamily = PoppinBold,
+                            fontSize = 20.sp,
+                            color = Color(0xFFF18E35)
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start){
+
+                        Text(text = "${dietItems.breakfastOneFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+
+                        Text(text = "${dietItems.breakfastTwoFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+                    }
+
+                }
 
             }
 
-            Row(modifier = Modifier.fillMaxWidth()){
+        }
+        Spacer(modifier = Modifier.height(8.dp))
 
-                Text(text = "Badem sütü",
-                    fontFamily = PoppinSemiBold,
-                    fontSize = 14.sp,
-                    color = Color(0xFFA4A4A4)
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFFE4E4E4),RoundedCornerShape(12.dp))
+            .background(Color.White),
+            contentAlignment = Alignment.Center){
+
+            Column(modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)){
+
+                Text(text = "Launch",
+                    fontFamily = PoppinBold,
+                    fontSize = 16.sp,
+                    color = Color.Black
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
-                Text(text = "450"+" Kcal",
-                    fontFamily = PoppinSemiBold,
-                    fontSize = 14.sp,
-                    color = Color(0xFFA4A4A4)
+                Row(modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start){
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally){
+
+                        Text(text = "Calorie",
+                            fontFamily = PoppinBold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF7B7878)
+                        )
+
+                        Text(text = "${dietItems.lunchCalorie}",
+                            fontFamily = PoppinBold,
+                            fontSize = 20.sp,
+                            color = Color(0xFFF18E35)
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start){
+
+                        Text(text = "${dietItems.lunchOneFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+
+                        Text(text = "${dietItems.lunchTwoFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+                    }
+
+                }
+
+            }
+
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Box(modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFFE4E4E4),RoundedCornerShape(12.dp))
+            .background(Color.White),
+            contentAlignment = Alignment.Center){
+
+            Column(modifier = Modifier.fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp)){
+
+                Text(text = "Evening Meal",
+                    fontFamily = PoppinBold,
+                    fontSize = 16.sp,
+                    color = Color.Black
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Start){
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally){
+
+                        Text(text = "Calorie",
+                            fontFamily = PoppinBold,
+                            fontSize = 12.sp,
+                            color = Color(0xFF7B7878)
+                        )
+
+                        Text(text = "${dietItems.eveningMealCalorie}",
+                            fontFamily = PoppinBold,
+                            fontSize = 20.sp,
+                            color = Color(0xFFF18E35)
+                        )
+
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.Start){
+
+                        Text(text = "${dietItems.eveningMealOneFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+
+                        Text(text = "${dietItems.eveningMealTwoFood}",
+                            fontFamily = PoppinSemiBold,
+                            fontSize = 14.sp,
+                            lineHeight = 14.sp,
+                            color = Color(0xFFA4A4A4)
+                        )
+                    }
+
+                }
 
             }
 
         }
 
     }
+
+
 }
 
 @Composable
@@ -461,6 +644,7 @@ private fun MobileSemiCircleProgressBar(
 @Composable
 private fun Show(){
 
-    //DietListScreen()
+    val dietItems = DietItem(1,"Monday","250","Yulaf","adem sütü","350","Köfte","Makrna","560","Ispanak","Bulgur Pilavı")
+    DietListRow(dietItems)
 
 }

@@ -1,5 +1,6 @@
 package com.muhammedturgut.caremate.ui.aiChat
 
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +25,8 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -43,19 +46,33 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.muhammedturgut.caremate.R
+import com.muhammedturgut.caremate.data.local.room.RoomViewModel
 import com.muhammedturgut.caremate.ui.theme.PoppinRegular
 import com.muhammedturgut.caremate.ui.theme.PoppinSemiBold
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun AIChatPageScreen(
     navControllerAppHost: NavController,
-    chatViewModel: ChatViewModel = hiltViewModel()
+    chatViewModel: ChatViewModel = hiltViewModel(),
+    roomViewModel: RoomViewModel = hiltViewModel()
 ) {
     // ViewModel state'lerini observe et
     val messages by chatViewModel.messages.observeAsState(emptyList())
+    val aiResponse by chatViewModel.getAiMessage.observeAsState()
     val isLoading by chatViewModel.isLoading.observeAsState(false)
+    val getAllItemChatList by roomViewModel.getAllChatItemList.collectAsState()
     val error by chatViewModel.error.observeAsState()
     var text by remember { mutableStateOf("") }
+
+    val dateTime = DateTimeUtils.getCurrentDateTimeFormatted()
+    LaunchedEffect(aiResponse) {
+        roomViewModel.insertChatData(send = if (aiResponse!!.isUser) "User" else "AI", contentMessage = aiResponse!!.text, date = dateTime)
+    }
+
+
 
     Box(
         modifier = Modifier
@@ -114,6 +131,9 @@ fun AIChatPageScreen(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier
                         .clip(CircleShape)
+                        .clickable(onClick = {
+                            roomViewModel.deleteAllChatDataItem()
+                        })
                         .background(Color(0xFFF3F3F3))
                 ) {
 
@@ -148,16 +168,16 @@ fun AIChatPageScreen(
             }
 
             // Chat Messages Area
+            // Chat Messages Area - Düzeltilmiş kısım
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(vertical = 16.dp),
-                contentAlignment = if (messages.isEmpty() && !isLoading) Alignment.Center else Alignment.TopCenter
+                    .padding(vertical = 12.dp),
+                contentAlignment = if (getAllItemChatList.isEmpty() && !isLoading) Alignment.Center else Alignment.TopCenter
             ) {
 
-                // DÜZELTME: Başlangıç mesajı
-                if (messages.isEmpty() && !isLoading) {
+                if (getAllItemChatList.isEmpty() && !isLoading) {
                     Text(
                         text = "Merhaba! Ben AI Doktorunuzum.\nBelirtilerinizi anlatın, size yardımcı olmaya çalışayım.",
                         color = Color(0xFF666666),
@@ -171,24 +191,30 @@ fun AIChatPageScreen(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(8.dp),
-                        reverseLayout = true
+                        reverseLayout = false,  // ✅ Normal sıralama
+                        verticalArrangement = Arrangement.Top  // ✅ Üstten başla
                     ) {
-                        // Loading indicator mesajı
+                        // Mesajları normal sırayla göster (ters çevirme)
+                        items(getAllItemChatList) { msg ->
+                            msg?.let {
+                                ChatBubble(
+                                    text = it.contentsMessage ?: "",
+                                    isUser = (it.senderMessege ?: "") == "User",
+                                    dateTime = it.dateTime ?: dateTime  // ✅ Mesajın kendi tarihini kullan
+                                )
+                            }
+                        }
+
+                        // Loading indicator en altta
                         if (isLoading) {
                             item {
                                 ChatBubble(
                                     text = "Belirtileriniz analiz ediliyor...",
                                     isUser = false,
-                                    isLoading = true
+                                    isLoading = true,
+                                    dateTime = dateTime
                                 )
                             }
-                        }
-
-                        items(messages.reversed()) { msg ->
-                            ChatBubble(
-                                text = msg.text,
-                                isUser = msg.isUser
-                            )
                         }
                     }
                 }
@@ -281,9 +307,11 @@ fun AIChatPageScreen(
                                 if (text.isNotBlank()) {
                                     // ViewModel'deki sendMessage metodunu kullan
                                     chatViewModel.sendMessage(text.trim())
+                                    roomViewModel.insertChatData(send = "User", contentMessage = text, date = dateTime)
                                     // Input'u temizle
                                     text = ""
                                 }
+
                             }
                     )
                 }
@@ -293,13 +321,19 @@ fun AIChatPageScreen(
 }
 
 @Composable
-fun ChatBubble(text: String, isUser: Boolean, isLoading: Boolean = false) {
-    Box(
+fun ChatBubble(
+    text: String,
+    isUser: Boolean,
+    isLoading: Boolean = false,
+    dateTime: String
+) {
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp, horizontal = 8.dp),
-        contentAlignment = if (isUser) Alignment.CenterEnd else Alignment.CenterStart
+        horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
     ) {
+        // Ana mesaj balonu
         Box(
             modifier = Modifier
                 .background(
@@ -340,5 +374,103 @@ fun ChatBubble(text: String, isUser: Boolean, isLoading: Boolean = false) {
                 )
             }
         }
+
+        // Tarih/saat bilgisi - balonun altında
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Text(
+            text = dateTime,
+            fontFamily = PoppinRegular,
+            fontSize = 10.sp,
+            color = Color(0xFF666666),
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
     }
+}
+
+
+
+object DateTimeUtils {
+
+    /**
+     * Şu anki tarih ve saati döndürür
+     * Format: "Mon Sep 21, 2025 - 14:30"
+     */
+    fun getCurrentDateTimeFormatted(): String {
+        val currentDate = Date()
+        val dateFormat = SimpleDateFormat("EEE MMM dd, yyyy - HH:mm", Locale.ENGLISH)
+        return dateFormat.format(currentDate)
+    }
+
+    /**
+     * Sadece tarihi kısaltılmış formatta döndürür
+     * Format: "Mon Sep 21, 2025"
+     */
+    fun getCurrentDateFormatted(): String {
+        val currentDate = Date()
+        val dateFormat = SimpleDateFormat("EEE MMM dd, yyyy", Locale.ENGLISH)
+        return dateFormat.format(currentDate)
+    }
+
+    /**
+     * Sadece saati döndürür
+     * Format: "14:30"
+     */
+    fun getCurrentTimeFormatted(): String {
+        val currentDate = Date()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+        return timeFormat.format(currentDate)
+    }
+
+    /**
+     * Timestamp'i formatlanmış tarihe çevirir
+     * @param timestamp: Long (milisaniye)
+     * @return "Mon Sep 21, 2025 - 14:30"
+     */
+    fun formatTimestamp(timestamp: Long): String {
+        val date = Date(timestamp)
+        val dateFormat = SimpleDateFormat("EEE MMM dd, yyyy - HH:mm", Locale.ENGLISH)
+        return dateFormat.format(date)
+    }
+
+    /**
+     * ChatMessage için timestamp formatı
+     * @param timestamp: Long (milisaniye)
+     * @return "Mon Sep 21 - 14:30"
+     */
+    fun formatMessageTimestamp(timestamp: Long): String {
+        val date = Date(timestamp)
+        val dateFormat = SimpleDateFormat("EEE MMM dd - HH:mm", Locale.ENGLISH)
+        return dateFormat.format(date)
+    }
+
+    /**
+     * Özelleştirilebilir format
+     * @param format: Istenen format (örn: "EEE MMM dd, yyyy")
+     * @param timestamp: Opsiyonel timestamp, yoksa şu anki zaman
+     */
+    fun getCustomFormattedDateTime(format: String, timestamp: Long? = null): String {
+        val date = if (timestamp != null) Date(timestamp) else Date()
+        val dateFormat = SimpleDateFormat(format, Locale.ENGLISH)
+        return dateFormat.format(date)
+    }
+
+    /**
+     * Türkçe gün isimleriyle format (İsteğe bağlı)
+     * Format: "Pts Eyl 21, 2025 - 14:30"
+     */
+    fun getCurrentDateTimeFormattedTurkish(): String {
+        val currentDate = Date()
+        val dateFormat = SimpleDateFormat("EEE MMM dd, yyyy - HH:mm", Locale("tr", "TR"))
+        return dateFormat.format(currentDate)
+    }
+}
+
+// Extension fonksiyonlar
+fun Long.toFormattedDateTime(): String {
+    return DateTimeUtils.formatTimestamp(this)
+}
+
+fun Long.toMessageTimestamp(): String {
+    return DateTimeUtils.formatMessageTimestamp(this)
 }
